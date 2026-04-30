@@ -2722,9 +2722,7 @@ function toggleMoreTasks(catKey){
 document.addEventListener('keydown',function(e){
   // Ctrl+Z / Cmd+Z — undo (only when NOT in a text input/textarea)
   if((e.ctrlKey||e.metaKey)&&e.key==='z'&&!e.shiftKey){
-    const tag=(document.activeElement||{}).tagName||'';
-    const isTyping=tag==='INPUT'||tag==='TEXTAREA';
-    if(!isTyping){
+    if(undoStack.length>0){
       e.preventDefault();
       performUndo();
       return;
