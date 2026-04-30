@@ -714,6 +714,38 @@ body{font-family:'Segoe UI','Arial Hebrew',Arial,sans-serif;background:var(--bg)
   </div>
 </div>
 
+<!-- SYNC MODAL -->
+<div class="modal-overlay hidden" id="sync-modal" onclick="closeSyncModal(event)">
+  <div class="modal" onclick="event.stopPropagation()" style="max-width:400px;text-align:center;">
+    <div class="modal-title">🔄 סנכרון בין מכשירים</div>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:1rem;direction:rtl;">
+      כדי לסנכרן בין המחשב לטלפון — העתק את הקוד הזה ופתח אותו בטלפון.
+    </p>
+    <div style="background:var(--bg3);border-radius:10px;padding:12px;margin-bottom:1rem;">
+      <div style="font-size:11px;color:var(--text3);margin-bottom:6px;">המזהה שלך:</div>
+      <div id="sync-user-id" style="font-size:16px;font-weight:700;color:var(--accent);letter-spacing:1px;margin-bottom:8px;"></div>
+      <button class="btn btn-primary btn-sm" onclick="copySyncId()">📋 העתק</button>
+    </div>
+    <div style="background:#fff3cd;border-radius:10px;padding:12px;margin-bottom:1rem;direction:rtl;">
+      <div style="font-size:12px;color:#856404;font-weight:600;margin-bottom:4px;">בטלפון:</div>
+      <div style="font-size:12px;color:#856404;">
+        1. פתח את הכלי בטלפון<br>
+        2. לחץ על כפתור 🔄 סנכרון<br>
+        3. הזן את הקוד שהעתקת<br>
+        4. לחץ "חבר"
+      </div>
+    </div>
+    <div id="sync-input-section" style="margin-bottom:1rem;">
+      <div style="font-size:13px;color:var(--text2);margin-bottom:8px;">או הזן קוד ממכשיר אחר:</div>
+      <div style="display:flex;gap:8px;">
+        <input type="text" id="sync-code-input" class="inp" placeholder="הזן קוד..." style="margin:0;flex:1;text-align:center;" />
+        <button class="btn btn-primary" onclick="applySyncCode()">חבר</button>
+      </div>
+    </div>
+    <button class="btn" onclick="closeSyncModal()">סגור</button>
+  </div>
+</div>
+
 <button class="fab" onclick="openQuickAdd()">+</button>
 <div class="modal-overlay hidden" id="quick-modal" onclick="closeQuickAdd(event)">
   <div class="modal" onclick="event.stopPropagation()">
@@ -750,6 +782,7 @@ body{font-family:'Segoe UI','Arial Hebrew',Arial,sans-serif;background:var(--bg)
   <button class="btn" onclick="exportData()">💾 גיבוי</button>
   <button class="btn" onclick="importData()">📂 ייבוא</button>
   <button class="btn btn-danger" onclick="clearAllDone()">🗑️ נקה הושלמו</button>
+  <button class="btn" onclick="openSyncModal()">🔄 סנכרון</button>
   <input type="file" id="import-file" accept=".json" style="display:none" onchange="loadImport(event)" />
   <span id="sync-status-bar">נשמר אוטומטית + Firebase 🔥</span>
 </div>
@@ -2833,6 +2866,30 @@ function save(){
 // Init Firebase after page loads
 window.addEventListener('load',()=>initFirebase());
 
+
+// ===== SYNC MODAL =====
+function openSyncModal(){
+  document.getElementById('sync-user-id').textContent=fbUserId;
+  document.getElementById('sync-modal').classList.remove('hidden');
+}
+function closeSyncModal(e){
+  if(!e||e.target===document.getElementById('sync-modal'))
+    document.getElementById('sync-modal').classList.add('hidden');
+}
+function copySyncId(){
+  navigator.clipboard.writeText(fbUserId).then(()=>toast('הועתק! 📋'));
+}
+function applySyncCode(){
+  const code=document.getElementById('sync-code-input').value.trim();
+  if(!code){toast('הזן קוד');return;}
+  if(!code.startsWith('user_')){toast('קוד לא תקין');return;}
+  localStorage.setItem('fb_user_id',code);
+  fbUserId=code;
+  toast('מחובר! טוען נתונים...');
+  document.getElementById('sync-modal').classList.add('hidden');
+  loadFromFirebase().then(()=>toast('סונכרן בהצלחה! 🎉'));
+}
+
 // ===== KEYBOARD HANDLER (must be last, after all functions) =====
 document.addEventListener('keydown',function(e){
   // Ctrl+Z / Cmd+Z — undo (only when NOT in a text input/textarea)
@@ -2847,7 +2904,7 @@ document.addEventListener('keydown',function(e){
   if(e.key==='Escape'){
     ['proj-modal','quick-modal','task-event-modal','step-modal','step-event-modal',
      'event-modal','timer-modal','postpone-modal','idea-modal','edit-rec-modal',
-     'plan-tomorrow-modal','plan-week-modal','morning-review-modal'].forEach(function(id){
+     'plan-tomorrow-modal','plan-week-modal','morning-review-modal','sync-modal'].forEach(function(id){
       var el=document.getElementById(id);if(el)el.classList.add('hidden');
     });
   }
