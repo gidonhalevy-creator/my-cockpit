@@ -751,7 +751,7 @@ body{font-family:'Segoe UI','Arial Hebrew',Arial,sans-serif;background:var(--bg)
   <button class="btn" onclick="importData()">📂 ייבוא</button>
   <button class="btn btn-danger" onclick="clearAllDone()">🗑️ נקה הושלמו</button>
   <input type="file" id="import-file" accept=".json" style="display:none" onchange="loadImport(event)" />
-  <span>נשמר אוטומטית בדפדפן</span>
+  <span id="sync-status-bar">נשמר אוטומטית + Firebase 🔥</span>
 </div>
 <div class="toast" id="toast"></div>
 <div style="height:60px;"></div>
@@ -2717,6 +2717,121 @@ function toggleMoreTasks(catKey){
   const cnt=state.tasks.filter(t=>t.cat===cat&&!t.done).length-4;
   btn.textContent=open?'▼ הצג עוד ('+cnt+' משימות)':'▲ הסתר';
 }
+
+
+// ===== FIREBASE REALTIME SYNC =====
+const firebaseConfig = {
+  apiKey: "AIzaSyDYfT2xalbuoMcyc1xvXAw0WtMZnLCwCIs",
+  authDomain: "my-cockpit-b3fe3.firebaseapp.com",
+  databaseURL: "https://my-cockpit-b3fe3-default-rtdb.firebaseio.com",
+  projectId: "my-cockpit-b3fe3",
+  storageBucket: "my-cockpit-b3fe3.firebasestorage.app",
+  messagingSenderId: "946425811445",
+  appId: "1:946425811445:web:5f84b827318abdd3c150bc",
+  measurementId: "G-MMH61B7GFW"
+};
+
+// Load Firebase SDK dynamically
+function loadFirebase(){
+  return new Promise((resolve)=>{
+    if(window.firebase){resolve();return;}
+    const s1=document.createElement('script');
+    s1.src='https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js';
+    s1.onload=()=>{
+      const s2=document.createElement('script');
+      s2.src='https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js';
+      s2.onload=()=>resolve();
+      document.head.appendChild(s2);
+    };
+    document.head.appendChild(s1);
+  });
+}
+
+let fbDb=null;
+let fbSyncEnabled=false;
+let fbUserId='user_'+Math.random().toString(36).substr(2,9);
+
+// Check if we have a saved userId
+const savedId=localStorage.getItem('fb_user_id');
+if(savedId){fbUserId=savedId;}
+else{localStorage.setItem('fb_user_id',fbUserId);}
+
+async function initFirebase(){
+  try{
+    await loadFirebase();
+    firebase.initializeApp(firebaseConfig);
+    fbDb=firebase.database();
+    fbSyncEnabled=true;
+    // Load data from Firebase first
+    await loadFromFirebase();
+    // Listen for real-time changes
+    listenFirebase();
+    showSyncStatus('🟢 מסונכרן');
+    toast('Firebase מחובר — סנכרון בזמן אמת ✓');
+  }catch(err){
+    console.error('Firebase error:',err);
+    showSyncStatus('🔴 לא מחובר');
+  }
+}
+
+function showSyncStatus(msg){
+  let el=document.getElementById('sync-status');
+  if(!el){
+    el=document.createElement('div');
+    el.id='sync-status';
+    el.style.cssText='position:fixed;bottom:52px;left:24px;font-size:11px;color:var(--text3);z-index:150;';
+    document.body.appendChild(el);
+  }
+  el.textContent=msg;
+}
+
+async function loadFromFirebase(){
+  if(!fbDb)return;
+  const snap=await fbDb.ref('users/'+fbUserId+'/state').once('value');
+  const data=snap.val();
+  if(data){
+    state={...state,...data};
+    state.recurring=(state.recurring||[]).map(r=>({timeStart:'',timeEnd:'',doneToday:{},...r}));
+    state.events=(state.events||[]).map(e=>({timeEnd:'',archived:false,completed:false,...e}));
+    if(!state.ideas)state.ideas=[];
+    if(!state.ideaCats)state.ideaCats=[];
+    if(!state.dailyNotes)state.dailyNotes={};
+    // Re-render everything
+    renderBig3();renderTodayEvents();renderMorningAlerts();renderDailyNotes();updateStats();
+  }
+}
+
+function listenFirebase(){
+  if(!fbDb)return;
+  fbDb.ref('users/'+fbUserId+'/state').on('value',(snap)=>{
+    const data=snap.val();
+    if(!data)return;
+    state={...state,...data};
+    state.recurring=(state.recurring||[]).map(r=>({timeStart:'',timeEnd:'',doneToday:{},...r}));
+    state.events=(state.events||[]).map(e=>({timeEnd:'',archived:false,completed:false,...e}));
+    if(!state.ideas)state.ideas=[];
+    if(!state.ideaCats)state.ideaCats=[];
+    if(!state.dailyNotes)state.dailyNotes={};
+    renderBig3();renderTodayEvents();updateStats();
+  });
+}
+
+let fbSaveTimeout=null;
+function save(){
+  try{localStorage.setItem('taskmaster_v3',JSON.stringify(state));}catch(e){}
+  // Debounce Firebase save (500ms)
+  if(fbSyncEnabled&&fbDb){
+    clearTimeout(fbSaveTimeout);
+    fbSaveTimeout=setTimeout(()=>{
+      fbDb.ref('users/'+fbUserId+'/state').set(state)
+        .then(()=>showSyncStatus('🟢 מסונכרן'))
+        .catch(()=>showSyncStatus('🔴 שגיאת סנכרון'));
+    },500);
+  }
+}
+
+// Init Firebase after page loads
+window.addEventListener('load',()=>initFirebase());
 
 // ===== KEYBOARD HANDLER (must be last, after all functions) =====
 document.addEventListener('keydown',function(e){
