@@ -731,7 +731,45 @@ body{font-family:'Segoe UI','Arial Hebrew',Arial,sans-serif;background:var(--bg)
 <div class="modal-overlay hidden" id="event-modal" onclick="closeEventModal(event)">
   <div class="modal" onclick="event.stopPropagation()" style="max-width:480px;">
     <div class="modal-title" id="em-title">📅 אירוע</div>
-    <input type="text" id="em-name" class="inp" placeholder="שם האירוע" />
+    <!-- בחירה: אירוע חדש / משימה קיימת / פרויקט -->
+    <div style="display:flex;gap:6px;margin-bottom:12px;">
+      <button class="btn btn-sm" id="em-mode-new" onclick="setEventModalMode('new')" style="flex:1;background:#1a1a2e;color:#fff;border-color:#1a1a2e;">✏️ אירוע חדש</button>
+      <button class="btn btn-sm" id="em-mode-task" onclick="setEventModalMode('task')" style="flex:1;">✅ מרשימת משימות</button>
+      <button class="btn btn-sm" id="em-mode-proj" onclick="setEventModalMode('proj')" style="flex:1;">📁 מפרויקט</button>
+    </div>
+    <!-- אירוע חדש -->
+    <div id="em-new-section">
+      <input type="text" id="em-name" class="inp" placeholder="שם האירוע" />
+    </div>
+    <!-- בחירת משימה -->
+    <div id="em-task-section" class="hidden">
+      <div style="font-size:12px;color:var(--text3);margin-bottom:6px;">סנן לפי קטגוריה:</div>
+      <select id="em-task-cat-filter" class="inp" onchange="populateEmTaskSel()" style="margin-bottom:8px;">
+        <option value="">הכל</option>
+        <option value="נדלן ישראל">🏠 נדלן ישראל</option>
+        <option value="נדלן ארהב">🇺🇸 נדלן ארהב</option>
+        <option value="אישי">👤 אישי</option>
+        <option value="עבודה שכירה">💼 עבודה שכירה</option>
+        <option value="לימודים">📚 לימודים</option>
+        <option value="כושר">💪 כושר</option>
+        <option value="AI">🤖 AI</option>
+      </select>
+      <div style="font-size:12px;color:var(--text3);margin-bottom:6px;">בחר משימה:</div>
+      <select id="em-task-sel" class="inp" onchange="onEmTaskSelect()">
+        <option value="">-- בחר משימה --</option>
+      </select>
+    </div>
+    <!-- בחירת פרויקט ושלב -->
+    <div id="em-proj-section" class="hidden">
+      <div style="font-size:12px;color:var(--text3);margin-bottom:6px;">בחר פרויקט:</div>
+      <select id="em-proj-sel" class="inp" onchange="onEmProjSelect()">
+        <option value="">-- בחר פרויקט --</option>
+      </select>
+      <div style="font-size:12px;color:var(--text3);margin-bottom:6px;margin-top:8px;">בחר שלב (אופציונלי):</div>
+      <select id="em-step-sel" class="inp">
+        <option value="">-- ללא שלב ספציפי --</option>
+      </select>
+    </div>
     <div class="modal-row"><input type="date" id="em-date" /><input type="time" id="em-start" /><input type="time" id="em-end" /></div>
     <select id="em-type" class="inp"><option value="business">💼 עסקי</option><option value="couple">❤️ זוגי</option><option value="medical">🏥 רפואי</option><option value="personal">👤 אישי</option><option value="zoom">💻 זום</option><option value="social">🎉 חברתי</option><option value="other">📌 שונות</option></select>
     <input type="text" id="em-note" class="inp" placeholder="הערה" />
@@ -1722,7 +1760,10 @@ function openNewEventModal(date,startTime){
   document.getElementById('em-start').value=startTime||'';document.getElementById('em-end').value='';
   document.getElementById('em-type').value='business';document.getElementById('em-note').value='';
   document.getElementById('em-del-btn').classList.add('hidden');
+  document.getElementById('em-add-task').checked=false;
   document.getElementById('event-modal').classList.remove('hidden');
+  setEventModalMode('new');
+  const catF=document.getElementById('em-task-cat-filter');if(catF)catF.value='';
   setTimeout(()=>document.getElementById('em-name').focus(),100);
 }
 function openEditEvent(id){
@@ -1736,8 +1777,19 @@ function openEditEvent(id){
 }
 function closeEventModal(e){if(!e||e.target===document.getElementById('event-modal'))document.getElementById('event-modal').classList.add('hidden');}
 function saveEventModal(){
-  const name=document.getElementById('em-name').value.trim();const date=document.getElementById('em-date').value;if(!name||!date){toast('שם ותאריך חובה');return;}
-  const data={name,date,timeStart:document.getElementById('em-start').value,timeEnd:document.getElementById('em-end').value,type:document.getElementById('em-type').value,note:document.getElementById('em-note').value.trim()};
+  // Get name based on mode
+  let name=document.getElementById('em-name').value.trim();
+  let linkedTaskId=null, linkedProjId=null, linkedStepId=null;
+  if(emCurrentMode==='task'){
+    const taskSel=document.getElementById('em-task-sel');
+    if(taskSel&&taskSel.value){linkedTaskId=parseInt(taskSel.value);const t=state.tasks.find(t=>t.id===linkedTaskId);if(t&&!name)name=t.text;}
+  } else if(emCurrentMode==='proj'){
+    const projSel=document.getElementById('em-proj-sel');const stepSel=document.getElementById('em-step-sel');
+    if(projSel&&projSel.value){linkedProjId=parseInt(projSel.value);const p=state.projects.find(p=>p.id===linkedProjId);if(p&&!name)name=p.name;}
+    if(stepSel&&stepSel.value){linkedStepId=parseInt(stepSel.value);const p=state.projects.find(p=>p.id===linkedProjId);if(p){const s=p.steps.find(s=>s.id===linkedStepId);if(s&&!name)name=s.text;}}
+  }
+  const date=document.getElementById('em-date').value;if(!name||!date){toast('שם ותאריך חובה');return;}
+  const data={name,date,timeStart:document.getElementById('em-start').value,timeEnd:document.getElementById('em-end').value,type:document.getElementById('em-type').value,note:document.getElementById('em-note').value.trim(),linkedTaskId:linkedTaskId||undefined,linkedProjId:linkedProjId||undefined,linkedStepId:linkedStepId||undefined};
   if(editingEventId){const e=state.events.find(e=>e.id===editingEventId);if(e)Object.assign(e,data);}
   else{
     state.events.unshift({id:Date.now(),...data,archived:false,completed:false});
@@ -3660,6 +3712,71 @@ function renderTrash(){
       '<button class="btn btn-danger btn-sm" onclick="permDeleteFromTrash('+t.id+')">🗑️</button>'+
     '</div>';
   }).join('');
+}
+
+
+// ===== EVENT MODAL MODES (new / task / project) =====
+let emCurrentMode = 'new';
+
+function setEventModalMode(mode){
+  emCurrentMode = mode;
+  // Reset button styles
+  ['new','task','proj'].forEach(m=>{
+    const btn = document.getElementById('em-mode-'+m);
+    if(btn){btn.style.background='';btn.style.color='';btn.style.borderColor='';}
+  });
+  // Highlight active
+  const activeBtn = document.getElementById('em-mode-'+mode);
+  if(activeBtn){activeBtn.style.background='#1a1a2e';activeBtn.style.color='#fff';activeBtn.style.borderColor='#1a1a2e';}
+  // Show/hide sections
+  document.getElementById('em-new-section').classList.toggle('hidden', mode!=='new');
+  document.getElementById('em-task-section').classList.toggle('hidden', mode!=='task');
+  document.getElementById('em-proj-section').classList.toggle('hidden', mode!=='proj');
+  // Populate selects
+  if(mode==='task') populateEmTaskSel();
+  if(mode==='proj') populateEmProjSel();
+}
+
+function populateEmTaskSel(){
+  const sel = document.getElementById('em-task-sel');
+  const catFilter = document.getElementById('em-task-cat-filter');
+  if(!sel) return;
+  const selectedCat = catFilter ? catFilter.value : '';
+  let tasks = state.tasks.filter(t=>!t.done);
+  if(selectedCat) tasks = tasks.filter(t=>t.cat===selectedCat);
+  sel.innerHTML = '<option value="">-- בחר משימה --</option>' +
+    tasks.map(t=>'<option value="'+t.id+'">'+priLabel(t.pri||'B1')+' | '+t.text.substring(0,45)+'</option>').join('');
+  if(!tasks.length) sel.innerHTML += '<option disabled>אין משימות בקטגוריה זו</option>';
+}
+
+function onEmTaskSelect(){
+  const sel = document.getElementById('em-task-sel');
+  if(!sel||!sel.value) return;
+  const t = state.tasks.find(t=>t.id===parseInt(sel.value));
+  if(!t) return;
+  document.getElementById('em-name').value = t.text;
+}
+
+function populateEmProjSel(){
+  const sel = document.getElementById('em-proj-sel');
+  if(!sel) return;
+  sel.innerHTML = '<option value="">-- בחר פרויקט --</option>' +
+    state.projects.map(p=>'<option value="'+p.id+'">'+CAT_ICONS[p.cat]+' '+p.name+'</option>').join('');
+  document.getElementById('em-step-sel').innerHTML = '<option value="">-- ללא שלב ספציפי --</option>';
+}
+
+function onEmProjSelect(){
+  const sel = document.getElementById('em-proj-sel');
+  const stepSel = document.getElementById('em-step-sel');
+  if(!sel||!sel.value){stepSel.innerHTML='<option value="">-- ללא שלב ספציפי --</option>';return;}
+  const p = state.projects.find(p=>p.id===parseInt(sel.value));
+  if(!p){stepSel.innerHTML='<option value="">-- ללא שלב ספציפי --</option>';return;}
+  // Set event name to project name
+  document.getElementById('em-name').value = p.name;
+  // Populate steps
+  const activeSteps = p.steps.filter(s=>!s.done);
+  stepSel.innerHTML = '<option value="">-- ללא שלב ספציפי --</option>' +
+    activeSteps.map(s=>'<option value="'+s.id+'">'+s.text.substring(0,50)+'</option>').join('');
 }
 
 // ===== KEYBOARD HANDLER (must be last, after all functions) =====
