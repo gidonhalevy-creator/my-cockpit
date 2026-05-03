@@ -213,6 +213,15 @@ body{font-family:'Segoe UI','Arial Hebrew',Arial,sans-serif;background:var(--bg)
 .cal-ev-time{font-size:10px;opacity:0.75;direction:ltr;}
 .cal-ev-resize{position:absolute;bottom:0;left:0;right:0;height:6px;cursor:ns-resize;background:rgba(0,0,0,0.08);border-radius:0 0 4px 4px;z-index:5;}
 
+/* אירועים רב-יומיים */
+.cal-allday-row{display:flex;border-bottom:2px solid var(--border);background:var(--bg2);}
+.cal-allday-gutter{width:56px;flex-shrink:0;font-size:10px;color:var(--text3);display:flex;align-items:center;justify-content:center;padding:4px;border-left:1px solid var(--border);}
+.cal-allday-cells{display:flex;flex:1;}
+.cal-allday-cell{flex:1;min-height:24px;padding:2px;border-left:1px solid var(--border);position:relative;}
+.cal-allday-cell:first-child{border-left:none;}
+.cal-multiday-ev{font-size:11px;font-weight:600;padding:2px 6px;border-radius:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:2px;cursor:pointer;}
+
+
 /* Priority submenu */
 .pri-menu{position:absolute;background:var(--bg2);border:1px solid var(--border);border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,0.15);z-index:500;padding:6px;display:none;min-width:180px;}
 .pri-menu.open{display:block;}
@@ -570,6 +579,20 @@ body{font-family:'Segoe UI','Arial Hebrew',Arial,sans-serif;background:var(--bg)
     <div style="font-size:12px;color:var(--text3);margin-bottom:12px;">פריטים נשמרים 30 יום לפני מחיקה לצמיתות</div>
     <button class="btn btn-danger btn-sm" onclick="clearTrash()" style="margin-bottom:1rem;">🗑️ רוקן סל מחזור</button>
     <div id="trash-list"></div>
+  </div>
+</div>
+
+
+<!-- CUSTOM CONFIRM MODAL -->
+<div class="modal-overlay hidden" id="confirm-modal" onclick="closeConfirm()">
+  <div class="modal" onclick="event.stopPropagation()" style="max-width:360px;text-align:center;">
+    <div style="font-size:40px;margin-bottom:12px;">🗑️</div>
+    <div style="font-size:16px;font-weight:700;margin-bottom:8px;" id="confirm-title">האם למחוק?</div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:1.5rem;" id="confirm-msg"></div>
+    <div style="display:flex;gap:10px;">
+      <button class="btn btn-danger" id="confirm-ok-btn" style="flex:1;padding:12px;">כן, מחק</button>
+      <button class="btn" onclick="closeConfirm()" style="flex:1;padding:12px;">ביטול</button>
+    </div>
   </div>
 </div>
 
@@ -1518,7 +1541,8 @@ function toggleBig3Done(){
   const cnt=state.big3.filter(t=>t.done).length;
   document.getElementById('big3-done-lbl').textContent=(big3DoneVisible?'▲':'▼')+` הושלמו היום (${cnt})`;
 }
-function clearBig3Done(){if(!confirm('למחוק את כל ההושלמו?'))return;const done=state.big3.filter(t=>t.done);state.big3=state.big3.filter(t=>!t.done);pushUndo('מחיקת כל ההושלמו ('+done.length+')',()=>{state.big3=[...state.big3,...done];save();renderBig3();updateStats();});save();renderBig3();updateStats();toast('נוקה ✓ — Ctrl+Z לביטול');}
+function clearBig3Done(){showConfirm('מחיקת כל ההושלמו מהמשימות המרכזיות',()=>{_doClearBig3Done();});}
+function _doClearBig3Done(){const done=state.big3.filter(t=>t.done);state.big3=state.big3.filter(t=>!t.done);pushUndo('מחיקת כל ההושלמו ('+done.length+')',()=>{state.big3=[...state.big3,...done];save();renderBig3();updateStats();});save();renderBig3();updateStats();toast('נוקה ✓ — Ctrl+Z לביטול');}
 function renderBig3(){updateProgressBar();
   const active=state.big3.filter(t=>!t.done);
   const done=state.big3.filter(t=>t.done);
@@ -1588,7 +1612,8 @@ function renderProjects(){
 function openProjModal(id){currentProjId=id;const p=state.projects.find(p=>p.id===id);if(!p)return;document.getElementById('pm-title').textContent='📁 '+p.name;document.getElementById('pm-notes').value=p.notes||'';renderPmSteps(p);renderPmLinks(p);document.getElementById('proj-modal').classList.remove('hidden');}
 function closeProjModal(e){if(!e||e.target===document.getElementById('proj-modal'))document.getElementById('proj-modal').classList.add('hidden');}
 function saveProject(){const p=state.projects.find(p=>p.id===currentProjId);if(!p)return;p.notes=document.getElementById('pm-notes').value;save();renderProjects();toast('נשמר ✓');document.getElementById('proj-modal').classList.add('hidden');}
-function deleteProject(){if(!confirm('למחוד?'))return;const p=state.projects.find(p=>p.id===currentProjId);if(!p)return;const copy={...p,steps:[...p.steps],links:[...(p.links||[])]};addToTrash('project',copy,copy.name);state.projects=state.projects.filter(p=>p.id!==currentProjId);pushUndo('מחיקת פרויקט: '+copy.name,()=>{state.projects.unshift(copy);state.trash=state.trash.filter(tr=>tr.item.id!==copy.id);save();renderProjects();});save();renderProjects();document.getElementById('proj-modal').classList.add('hidden');toast('נמחק ✓ — Ctrl+Z או סל מחזור לשחזור');}
+function deleteProject(){document.getElementById('proj-modal').classList.add('hidden');showConfirm('למחוק את הפרויקט?',()=>{_doDeleteProject();});}
+function _doDeleteProject(){const p=state.projects.find(p=>p.id===currentProjId);if(!p)return;const copy={...p,steps:[...p.steps],links:[...(p.links||[])]};addToTrash('project',copy,copy.name);state.projects=state.projects.filter(p=>p.id!==currentProjId);pushUndo('מחיקת פרויקט: '+copy.name,()=>{state.projects.unshift(copy);state.trash=state.trash.filter(tr=>tr.item.id!==copy.id);save();renderProjects();});save();renderProjects();document.getElementById('proj-modal').classList.add('hidden');toast('נמחק ✓ — Ctrl+Z או סל מחזור לשחזור');}
 function renderPmSteps(p){
   const el=document.getElementById('pm-steps');
   if(!p.steps.length){el.innerHTML='<div class="empty" style="margin-bottom:8px;">אין שלבים</div>';return;}
@@ -1770,18 +1795,29 @@ function openNewEventModal(date,startTime){
   document.getElementById('em-type').value='business';document.getElementById('em-note').value='';
   document.getElementById('em-del-btn').classList.add('hidden');
   document.getElementById('em-add-task').checked=false;
+  // Show mode buttons for new events
+  const modeDiv=document.querySelector('#event-modal [id^="em-mode-new"]');
+  if(modeDiv)modeDiv.closest('div').style.display='';
   document.getElementById('event-modal').classList.remove('hidden');
   setEventModalMode('new');
   const catF=document.getElementById('em-task-cat-filter');if(catF)catF.value='';
   setTimeout(()=>document.getElementById('em-name').focus(),100);
 }
 function openEditEvent(id){
-  const e=state.events.find(e=>e.id===id);if(!e)return;
-  editingEventId=id;document.getElementById('em-title').textContent='✏️ עריכת אירוע';
+  const eid=isNaN(Number(id))?id:parseInt(id);
+  const e=state.events.find(e=>e.id===eid);if(!e)return;
+  editingEventId=eid;document.getElementById('em-title').textContent='✏️ עריכת אירוע';
   document.getElementById('em-name').value=e.name;document.getElementById('em-date').value=e.date;
   document.getElementById('em-start').value=e.timeStart||'';document.getElementById('em-end').value=e.timeEnd||'';document.getElementById('em-end-date').value=e.dateEnd||'';
   document.getElementById('em-type').value=e.type;document.getElementById('em-note').value=e.note||'';
+  // Hide mode buttons in edit mode - not needed
+  const modeBtns=document.querySelector('#event-modal .btn-sm[id^="em-mode-"]');
+  if(modeBtns)modeBtns.closest('div').style.display='none';
+  document.getElementById('em-new-section').classList.remove('hidden');
+  document.getElementById('em-task-section').classList.add('hidden');
+  document.getElementById('em-proj-section').classList.add('hidden');
   document.getElementById('em-del-btn').classList.remove('hidden');
+  document.getElementById('em-add-task').checked=false;
   document.getElementById('event-modal').classList.remove('hidden');
 }
 function closeEventModal(e){if(!e||e.target===document.getElementById('event-modal'))document.getElementById('event-modal').classList.add('hidden');}
@@ -1812,7 +1848,8 @@ function saveEventModal(){
   }
   save();renderEvents(currentEventFilter);updateStats();renderTodayEvents();renderCalendar();document.getElementById('event-modal').classList.add('hidden');toast('נשמר ✓');
 }
-function deleteEventModal(){if(!confirm('למחוק?'))return;const e=state.events.find(e=>e.id===editingEventId);if(!e)return;const copy={...e};addToTrash('event',copy,copy.name);state.events=state.events.filter(e=>e.id!==editingEventId);pushUndo('מחיקת אירוע: '+copy.name,()=>{state.events.unshift(copy);state.trash=state.trash.filter(tr=>tr.item.id!==copy.id);save();renderEvents(currentEventFilter);updateStats();renderTodayEvents();renderCalendar();});save();renderEvents(currentEventFilter);updateStats();renderTodayEvents();renderCalendar();document.getElementById('event-modal').classList.add('hidden');toast('נמחק ✓ — Ctrl+Z או סל מחזור לשחזור');}
+function deleteEventModal(){document.getElementById('event-modal').classList.add('hidden');showConfirm('למחוק את האירוע?',()=>{_doDeleteEventModal();});}
+function _doDeleteEventModal(){const eid=isNaN(Number(editingEventId))?editingEventId:parseInt(editingEventId);const e=state.events.find(e=>e.id===eid||e.id===editingEventId);if(!e){toast('לא נמצא אירוע');return;}editingEventId=e.id;const copy={...e};addToTrash('event',copy,copy.name);state.events=state.events.filter(ev=>ev.id!==editingEventId);pushUndo('מחיקת אירוע: '+copy.name,()=>{state.events.unshift(copy);state.trash=state.trash.filter(tr=>tr.item.id!==copy.id);save();renderEvents(currentEventFilter);updateStats();renderTodayEvents();renderCalendar();});save();renderEvents(currentEventFilter);updateStats();renderTodayEvents();renderCalendar();document.getElementById('event-modal').classList.add('hidden');toast('נמחק ✓ — Ctrl+Z או סל מחזור לשחזור');}
 
 // TASK TO EVENT
 function openTaskAsEvent(taskId){currentTaskForEvent=taskId;const t=[...state.tasks,...state.big3].find(t=>t.id===taskId);if(!t)return;document.getElementById('te-task-name').textContent='📋 '+t.text;document.getElementById('te-date').value=todayStr;document.getElementById('task-event-modal').classList.remove('hidden');}
@@ -1919,7 +1956,8 @@ function renderTasks(filter){
     return`<div class="cat-card"><div class="cat-header"><span class="cat-name" style="color:${CAT_COLORS[cat]}">${cat}</span><span class="cat-count">${active.length} פעיל${done.length?' · '+done.length+' הושלם':''}</span></div>${activeHtml}${doneHtml}</div>`;
   }).join('');
 }
-function deleteCatDone(cat){if(!confirm('למחוק את כל ההושלמו ב"'+cat+'"?'))return;const done=state.tasks.filter(t=>t.cat===cat&&t.done);state.tasks=state.tasks.filter(t=>!(t.cat===cat&&t.done));pushUndo('מחיקת הושלמו: '+cat,()=>{state.tasks=[...state.tasks,...done];save();renderTasks(currentFilter);updateStats();});save();renderTasks(currentFilter);updateStats();toast('נוקה ✓ — Ctrl+Z לביטול');}
+function deleteCatDone(cat){showConfirm('מחיקת כל ההושלמו ב"'+cat+'"',()=>{_doDeleteCatDone(cat);});}
+function _doDeleteCatDone(cat){const done=state.tasks.filter(t=>t.cat===cat&&t.done);state.tasks=state.tasks.filter(t=>!(t.cat===cat&&t.done));pushUndo('מחיקת הושלמו: '+cat,()=>{state.tasks=[...state.tasks,...done];save();renderTasks(currentFilter);updateStats();});save();renderTasks(currentFilter);updateStats();toast('נוקה ✓ — Ctrl+Z לביטול');}
 function toggleDoneSection(id){const el=document.getElementById(id);const tog=document.getElementById('toggle_'+id);if(!el)return;const open=el.style.display==='block';el.style.display=open?'none':'block';const cat=id.replace('done_','').replace(/_/g,' ');const cnt=state.tasks.filter(t=>t.cat===cat&&t.done).length;tog.innerHTML=(open?'▼':'▲')+` הושלמו (${cnt})`;}
 function toggleTask(id){toggleTaskWithUndo(id);}
 function undoTask(id){const t=state.tasks.find(t=>t.id===id);if(t)t.done=false;save();renderTasks(currentFilter);updateStats();}
@@ -2005,12 +2043,45 @@ function buildTableCal(days){
   // Extra row for 24:00 label
   const lastRow=`<tr><td class="cal-td-time" style="border-bottom:none;">24:00</td>${days.map((_,di)=>`<td class="${isTodays[di]?'cal-today-col':''}" style="height:20px;border-bottom:none;"></td>`).join('')}</tr>`;
 
-  return`<div class="cal-outer"><div class="cal-table-wrap">
-    <table class="cal-table">
-      <thead><tr><th class="cal-th-gutter"></th>${thCells}</tr></thead>
-      <tbody>${rows}${lastRow}</tbody>
-    </table>
-  </div></div>`;
+  // Build all-day / multi-day row
+  const multiDayEvs=[];
+  dayStrs.forEach((dStr,di)=>{
+    state.events.filter(e=>!e.archived&&!e.completed&&e.dateEnd&&e.dateEnd>e.date).forEach(e=>{
+      if(dStr>=e.date&&dStr<=e.dateEnd){
+        if(!multiDayEvs.find(m=>m.evId===e.id&&m.di===di)){
+          multiDayEvs.push({evId:e.id,di,name:e.name,type:e.type,isStart:dStr===e.date,isEnd:dStr===e.dateEnd});
+        }
+      }
+    });
+  });
+
+  // Group multi-day events by evId
+  const multiDayGroups={};
+  multiDayEvs.forEach(m=>{
+    if(!multiDayGroups[m.evId])multiDayGroups[m.evId]=[];
+    multiDayGroups[m.evId].push(m);
+  });
+
+  // Build all-day cells
+  const allDayCells=days.map((_,di)=>{
+    const cellEvs=multiDayEvs.filter(m=>m.di===di);
+    const evHtml=cellEvs.map(m=>{
+      const et=evType(state.events.find(e=>e.id===m.evId)&&state.events.find(e=>e.id===m.evId).type||'business');
+      return '<div class="cal-multiday-ev" style="background:'+et.bg+';color:'+et.color+';border-right:'+(m.isStart?'3px solid '+et.color:'')+'" onclick="openEditEvent('+m.evId+')">'+
+        (m.isStart?'◀ ':'')+m.name+(m.isEnd?' ▶':'')+
+      '</div>';
+    }).join('');
+    return '<div class="cal-allday-cell">'+evHtml+'</div>';
+  }).join('');
+
+  const hasMultiDay=multiDayEvs.length>0;
+  const allDayRow=hasMultiDay?'<div class="cal-allday-row"><div class="cal-allday-gutter">רב-יומי</div><div class="cal-allday-cells">'+allDayCells+'</div></div>':'';
+
+  return '<div class="cal-outer">'+allDayRow+'<div class="cal-table-wrap">'+
+    '<table class="cal-table">'+
+    '<thead><tr><th class="cal-th-gutter"></th>'+thCells+'</tr></thead>'+
+    '<tbody>'+rows+lastRow+'</tbody>'+
+    '</table></div></div>';
 }
 
 function buildCalEvInSlot(e,slotHour){
@@ -2126,7 +2197,8 @@ function saveEditRec(){
   save();renderRecurring();renderTodayEvents();document.getElementById('edit-rec-modal').classList.add('hidden');toast('עודכן ✓');
 }
 function deleteFromEditRec(){
-  if(!confirm('למחוק?'))return;
+  document.getElementById('edit-rec-modal').classList.add('hidden');showConfirm('למחוק את המשימה החוזרת?',()=>{_doDeleteFromEditRec();});}
+function _doDeleteFromEditRec(){
   const r=state.recurring.find(r=>r.id===editingRecId);if(!r)return;
   const copy={...r,days:[...(r.days||[])]};
   addToTrash('recurring',copy,copy.name);
@@ -2172,7 +2244,8 @@ function saveQuickAdd(){
   if(!document.getElementById('tab-calendar').classList.contains('hidden'))renderCalendar();
 }
 
-function clearAllDone(){if(!confirm('למחוק הושלמו?'))return;const doneTasks=state.tasks.filter(t=>t.done);const doneBig3=state.big3.filter(t=>t.done);state.tasks=state.tasks.filter(t=>!t.done);state.big3=state.big3.filter(t=>!t.done);pushUndo('ניקוי כל ההושלמו',()=>{state.tasks=[...state.tasks,...doneTasks];state.big3=[...state.big3,...doneBig3];save();renderTasks(currentFilter);renderBig3();updateStats();});save();renderTasks(currentFilter);renderBig3();updateStats();toast('נוקה ✓ — Ctrl+Z לביטול');}
+function clearAllDone(){showConfirm('מחיקת כל ההושלמו מכל הקטגוריות',()=>{_doClearAllDone();});}
+function _doClearAllDone(){const doneTasks=state.tasks.filter(t=>t.done);const doneBig3=state.big3.filter(t=>t.done);state.tasks=state.tasks.filter(t=>!t.done);state.big3=state.big3.filter(t=>!t.done);pushUndo('ניקוי כל ההושלמו',()=>{state.tasks=[...state.tasks,...doneTasks];state.big3=[...state.big3,...doneBig3];save();renderTasks(currentFilter);renderBig3();updateStats();});save();renderTasks(currentFilter);renderBig3();updateStats();toast('נוקה ✓ — Ctrl+Z לביטול');}
 function exportData(){const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='taskmaster_backup_'+todayStr+'.json';a.click();URL.revokeObjectURL(url);toast('גיבוי 💾');}
 function importData(){document.getElementById('import-file').click();}
 function loadImport(e){const file=e.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=function(ev){try{state=JSON.parse(ev.target.result);save();renderBig3();renderTodayEvents();updateStats();toast('יובא ✓');}catch(err){toast('שגיאה');}};reader.readAsText(file);}
@@ -2760,7 +2833,8 @@ function renderIdeaCats(){
 }
 
 function delIdeaCat(cat){
-  if(!confirm('למחוק קטגוריה "'+cat+'"? הרעיונות ישארו ללא קטגוריה'))return;
+  showConfirm('מחיקת קטגוריה "'+cat+'" — הרעיונות ישארו ללא קטגוריה',()=>{_doDelIdeaCat(cat);});}
+function _doDelIdeaCat(cat){
   const prevCats=[...state.ideaCats];
   const prevIdeas=state.ideas.map(i=>({...i}));
   state.ideaCats=state.ideaCats.filter(c=>c!==cat);
@@ -2905,7 +2979,8 @@ scheduleIdeaReminders();
 
 
 function deleteIdea(){
-  if(!confirm('למחוק?'))return;
+  document.getElementById('idea-modal').classList.add('hidden');showConfirm('למחוק את הרעיון?',()=>{_doDeleteIdea();});}
+function _doDeleteIdea(){
   const idea=state.ideas.find(i=>i.id===currentIdeaId);if(!idea)return;
   const copy={...idea};
   addToTrash('idea',copy,copy.name);
@@ -3685,13 +3760,15 @@ function restoreFromTrash(trashId){
 }
 
 function permDeleteFromTrash(trashId){
-  if(!confirm('למחוק לצמיתות?'))return;
+  showConfirm('מחיקה לצמיתות — לא ניתן לשחזר',()=>{_doPermDeleteFromTrash(trashId);});}
+function _doPermDeleteFromTrash(trashId){
   state.trash = state.trash.filter(t=>t.id!==trashId);
   save();renderTrash();toast('נמחק לצמיתות');
 }
 
 function clearTrash(){
-  if(!confirm('לרוקן את סל המחזור לצמיתות?'))return;
+  showConfirm('ריקון סל המחזור — לא ניתן לשחזר',()=>{_doClearTrash();});}
+function _doClearTrash(){
   state.trash=[];
   save();renderTrash();toast('סל המחזור רוקן ✓');
 }
@@ -3789,6 +3866,25 @@ function onEmProjSelect(){
     activeSteps.map(s=>'<option value="'+s.id+'">'+s.text.substring(0,50)+'</option>').join('');
 }
 
+
+// ===== CUSTOM CONFIRM =====
+let confirmCallback = null;
+function showConfirm(msg, onOk, title){
+  confirmCallback = onOk;
+  document.getElementById('confirm-title').textContent = title || 'האם למחוק?';
+  document.getElementById('confirm-msg').textContent = msg || '';
+  document.getElementById('confirm-ok-btn').onclick = ()=>{
+    const cb = confirmCallback;
+    closeConfirm();
+    if(cb) cb();
+  };
+  document.getElementById('confirm-modal').classList.remove('hidden');
+}
+function closeConfirm(){
+  document.getElementById('confirm-modal').classList.add('hidden');
+  confirmCallback = null;
+}
+
 // ===== KEYBOARD HANDLER (must be last, after all functions) =====
 document.addEventListener('keydown',function(e){
   // Ctrl+Z / Cmd+Z — undo (only when NOT in a text input/textarea)
@@ -3804,7 +3900,7 @@ document.addEventListener('keydown',function(e){
   if(e.key==='Escape'){
     ['proj-modal','quick-modal','task-event-modal','step-modal','step-event-modal',
      'event-modal','timer-modal','postpone-modal','idea-modal','edit-rec-modal',
-     'plan-tomorrow-modal','plan-week-modal','morning-review-modal','sync-modal'].forEach(function(id){
+     'plan-tomorrow-modal','plan-week-modal','morning-review-modal','sync-modal','confirm-modal'].forEach(function(id){
       var el=document.getElementById(id);if(el)el.classList.add('hidden');
     });
   }
