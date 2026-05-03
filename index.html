@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>מרכז השליטה שלי</title>
+<title>מרכז השליטה שלי — גרסה 15</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 :root{
@@ -212,6 +212,48 @@ body{font-family:'Segoe UI','Arial Hebrew',Arial,sans-serif;background:var(--bg)
 .cal-ev-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;direction:rtl;}
 .cal-ev-time{font-size:10px;opacity:0.75;direction:ltr;}
 .cal-ev-resize{position:absolute;bottom:0;left:0;right:0;height:6px;cursor:ns-resize;background:rgba(0,0,0,0.08);border-radius:0 0 4px 4px;z-index:5;}
+
+/* Priority submenu */
+.pri-menu{position:absolute;background:var(--bg2);border:1px solid var(--border);border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,0.15);z-index:500;padding:6px;display:none;min-width:180px;}
+.pri-menu.open{display:block;}
+.pri-menu-row{display:flex;gap:4px;margin-bottom:4px;}
+.pri-menu-row:last-child{margin-bottom:0;}
+.pri-btn{flex:1;padding:5px 4px;border-radius:6px;border:1px solid transparent;cursor:pointer;font-size:12px;font-weight:700;text-align:center;font-family:inherit;}
+.pri-btn:hover{filter:brightness(0.92);}
+.pri-btn.pA{background:#fde8e8;color:#c0392b;border-color:#f5c4c4;}
+.pri-btn.pB{background:#fef3cd;color:#a04000;border-color:#fde68a;}
+.pri-btn.pC{background:#d5f5e3;color:#1e8449;border-color:#a9dfbf;}
+.pri-btn.pD{background:#d6eaf8;color:#1a5276;border-color:#a9cce3;}
+.pri-btn.pE{background:#f0efe9;color:#777;border-color:#e0dfd8;}
+/* Focus mode */
+.focus-overlay{position:fixed;inset:0;background:#1a1a2e;z-index:1000;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;}
+.focus-task-name{font-size:28px;font-weight:700;color:#fff;text-align:center;margin-bottom:2rem;max-width:600px;line-height:1.4;}
+.focus-cat{font-size:14px;color:#aaa;margin-bottom:1.5rem;}
+.focus-pri{font-size:18px;font-weight:700;padding:4px 16px;border-radius:20px;margin-bottom:2rem;}
+.focus-timer{font-size:72px;font-weight:700;color:#fff;font-family:monospace;letter-spacing:4px;margin-bottom:2rem;}
+.focus-btns{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;}
+.focus-close{position:fixed;top:20px;left:20px;background:rgba(255,255,255,0.1);border:none;color:#fff;font-size:14px;padding:8px 16px;border-radius:8px;cursor:pointer;font-family:inherit;}
+/* Progress bar */
+.day-progress{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:12px 16px;margin-bottom:1.25rem;box-shadow:var(--shadow);}
+.day-progress-bar{height:10px;background:var(--bg3);border-radius:5px;overflow:hidden;margin-top:6px;}
+.day-progress-fill{height:100%;border-radius:5px;background:linear-gradient(90deg,#1e8449,#2d5be3);transition:width 0.5s;}
+/* Project link on task */
+.task-proj-link{font-size:10px;color:var(--accent);background:#e8f0ff;padding:1px 6px;border-radius:4px;cursor:pointer;}
+/* Recurring badge in today */
+.rec-badge{font-size:10px;background:#d5f5e3;color:#1e8449;border:1px solid #a9dfbf;padding:1px 6px;border-radius:4px;font-weight:700;}
+/* Month calendar */
+.month-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;}
+.month-cell{min-height:80px;border:1px solid var(--border);border-radius:6px;padding:4px;cursor:pointer;position:relative;}
+.month-cell:hover{background:var(--bg3);}
+.month-cell.is-today{border-color:var(--accent);background:#f0f4ff;}
+.month-cell.other-month{opacity:0.4;}
+.month-day-num{font-size:13px;font-weight:700;margin-bottom:2px;}
+.month-ev{font-size:10px;padding:1px 4px;border-radius:3px;margin-bottom:1px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
+.month-nav{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.month-jump{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px;}
+.month-jump-btn{font-size:11px;padding:3px 8px;border-radius:6px;border:1px solid var(--border);background:var(--bg2);cursor:pointer;font-family:inherit;}
+.month-jump-btn:hover,.month-jump-btn.active{background:#1a1a2e;color:#fff;border-color:#1a1a2e;}
+
 </style>
 </head>
 <body>
@@ -228,6 +270,7 @@ body{font-family:'Segoe UI','Arial Hebrew',Arial,sans-serif;background:var(--bg)
   <button class="nav-btn" onclick="showTab('calendar',this)">🗓️ יומן</button>
   <button class="nav-btn" onclick="showTab('ideas',this)">💡 רעיונות</button>
   <button class="nav-btn" onclick="showTab('recurring',this)">🔄 חוזרות</button>
+  <button class="nav-btn" onclick="showTab('trash',this)">🗑️ סל מחזור</button>
 </nav>
 
 <!-- MORNING -->
@@ -238,6 +281,14 @@ body{font-family:'Segoe UI','Arial Hebrew',Arial,sans-serif;background:var(--bg)
     <div class="stat-card"><div class="stat-label">הושלמו היום</div><div class="stat-val" id="st-done">0</div></div>
     <div class="stat-card"><div class="stat-label">משימות A</div><div class="stat-val" id="st-a">0</div></div>
     <div class="stat-card"><div class="stat-label">אירועים היום</div><div class="stat-val" id="st-ev">0</div></div>
+  </div>
+  <!-- PROGRESS BAR -->
+  <div class="day-progress" id="day-progress-bar">
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+      <span style="font-size:13px;font-weight:700;">התקדמות היום</span>
+      <span style="font-size:13px;color:var(--accent);font-weight:700;" id="progress-label">0 / 0</span>
+    </div>
+    <div class="day-progress-bar"><div class="day-progress-fill" id="progress-fill" style="width:0%;"></div></div>
   </div>
   <!-- DAILY NOTES / NOTEBOOK -->
   <div class="card">
@@ -258,7 +309,10 @@ body{font-family:'Segoe UI','Arial Hebrew',Arial,sans-serif;background:var(--bg)
 
   <!-- TODAY EVENTS -->
   <div class="card">
-    <div class="card-title">📅 היום שלך</div>
+    <div class="card-title" style="justify-content:space-between;">
+      <span>📅 היום שלך</span>
+      <button class="btn btn-primary btn-sm" onclick="openAddTaskToToday()">+ הוסף משימה</button>
+    </div>
     <div id="today-events-list"></div>
   </div>
   <div class="card">
@@ -284,7 +338,7 @@ body{font-family:'Segoe UI','Arial Hebrew',Arial,sans-serif;background:var(--bg)
       <div class="hidden" id="new-big3-form">
         <div class="add-row">
           <input type="text" id="big3-input" placeholder="משימה חדשה..." />
-          <select id="big3-pri"><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option></select>
+          <select id="big3-pri"><option value="A1">A1</option><option value="A2">A2</option><option value="A3">A3</option><option value="A4">A4</option><option value="A5">A5</option><option value="B1">B1</option><option value="B2">B2</option><option value="B3">B3</option><option value="B4">B4</option><option value="B5">B5</option><option value="C">C</option><option value="D">D</option><option value="E">E</option></select>
           <select id="big3-cat"><option value="נדלן ישראל">🏠 נדלן ישראל</option><option value="נדלן ארהב">🇺🇸 נדלן ארהב</option><option value="אישי">👤 אישי</option><option value="עבודה שכירה">💼 עבודה שכירה</option><option value="לימודים">📚 לימודים</option><option value="כושר">💪 כושר</option><option value="AI">🤖 AI</option>
 </select>
           <button class="btn btn-primary" onclick="addBig3New()">+ הוסף</button>
@@ -298,6 +352,8 @@ body{font-family:'Segoe UI','Arial Hebrew',Arial,sans-serif;background:var(--bg)
     <button class="btn btn-primary" onclick="openPlanWeek()">📅 תכנן את השבוע</button>
     <button class="btn" onclick="toggleScheduleView('tomorrow')">👁️ לוז מחר</button>
     <button class="btn" onclick="toggleScheduleView('week')">👁️ לוז השבוע</button>
+    <button class="btn btn-primary" onclick="openPlanNextWeek()">📅 תכנן שבוע הבא</button>
+    <button class="btn" onclick="toggleScheduleView('nextweek')">👁️ לוז שבוע הבא</button>
   </div>
   <!-- SCHEDULE PREVIEW -->
   <div id="schedule-preview" class="hidden" style="margin-bottom:1.25rem;"></div>
@@ -376,6 +432,24 @@ body{font-family:'Segoe UI','Arial Hebrew',Arial,sans-serif;background:var(--bg)
   <div class="card">
     <div class="card-title">📥 תיבת לכידה</div>
     <textarea class="capture-input" id="capture-input" placeholder="מה מסתובב לך בראש?&#10;כמה דברים, כל אחד בשורה חדשה"></textarea>
+    <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
+      <select id="cap-pre-cat" style="font-size:12px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);font-family:inherit;flex:1;">
+        <option value="">ללא קטגוריה</option>
+        <option value="נדלן ישראל">🏠 נדלן ישראל</option>
+        <option value="נדלן ארהב">🇺🇸 נדלן ארהב</option>
+        <option value="אישי">👤 אישי</option>
+        <option value="עבודה שכירה">💼 עבודה שכירה</option>
+        <option value="לימודים">📚 לימודים</option>
+        <option value="כושר">💪 כושר</option>
+        <option value="AI">🤖 AI</option>
+      </select>
+      <select id="cap-pre-pri" style="font-size:12px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);font-family:inherit;">
+        <option value="">ללא עדיפות</option>
+        <option value="A1">א1</option><option value="A2">א2</option><option value="A3">א3</option><option value="A4">א4</option><option value="A5">א5</option>
+        <option value="B1">ב1</option><option value="B2">ב2</option><option value="B3">ב3</option><option value="B4">ב4</option><option value="B5">ב5</option>
+        <option value="C">ג</option><option value="D">ד</option><option value="E">ה</option>
+      </select>
+    </div>
     <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;">
       <span style="font-size:12px;color:var(--text3);" id="cap-count">0 פריטים</span>
       <button class="btn btn-primary" onclick="addCapture()">+ הוסף</button>
@@ -403,10 +477,11 @@ body{font-family:'Segoe UI','Arial Hebrew',Arial,sans-serif;background:var(--bg)
   <div class="card">
     <div class="add-row">
       <input type="text" id="task-input" placeholder="משימה חדשה..." style="flex:2;" />
-      <select id="task-pri"><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option></select>
+      <select id="task-pri"><option value="A1">A1</option><option value="A2">A2</option><option value="A3">A3</option><option value="A4">A4</option><option value="A5">A5</option><option value="B1">B1</option><option value="B2">B2</option><option value="B3">B3</option><option value="B4">B4</option><option value="B5">B5</option><option value="C">C</option><option value="D">D</option><option value="E">E</option></select>
       <select id="task-cat"><option value="נדלן ישראל">🏠 נדלן ישראל</option><option value="נדלן ארהב">🇺🇸 נדלן ארהב</option><option value="אישי">👤 אישי</option><option value="עבודה שכירה">💼 עבודה שכירה</option><option value="לימודים">📚 לימודים</option><option value="כושר">💪 כושר</option><option value="AI">🤖 AI</option>
 </select>
       <input type="text" id="task-link" placeholder="קישור" style="flex:1.5;" />
+      <select id="task-proj" style="font-size:12px;padding:8px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);font-family:inherit;" title="שייך לפרויקט"><option value="">📁 ללא פרויקט</option></select>
       <button class="btn btn-primary" onclick="addTask()">+ הוסף</button>
     </div>
   </div>
@@ -419,6 +494,7 @@ body{font-family:'Segoe UI','Arial Hebrew',Arial,sans-serif;background:var(--bg)
     <div class="cal-view-btns">
       <button class="cal-view-btn active" id="view-week-btn" onclick="setCalView('week')">שבועי</button>
       <button class="cal-view-btn" id="view-day-btn" onclick="setCalView('day')">יומי</button>
+      <button class="cal-view-btn" id="view-month-btn" onclick="setCalView('month')">חודשי</button>
     </div>
     <button class="cal-nav-btn" onclick="calNav(-1)">›</button>
     <div class="cal-title" id="cal-title"></div>
@@ -477,6 +553,20 @@ body{font-family:'Segoe UI','Arial Hebrew',Arial,sans-serif;background:var(--bg)
     <button class="btn btn-primary btn-sm" onclick="openIdeaModal(null)" style="margin-top:8px;">+ רעיון חדש</button>
   </div>
   <div id="ideas-list"></div>
+</div>
+
+
+<!-- TRASH -->
+<div class="content hidden" id="tab-trash">
+  <div class="card">
+    <div class="card-title" style="justify-content:space-between;">
+      <span>🗑️ סל מחזור</span>
+      <span style="font-size:12px;color:var(--text3);" id="trash-count">0 פריטים</span>
+    </div>
+    <div style="font-size:12px;color:var(--text3);margin-bottom:12px;">פריטים נשמרים 30 יום לפני מחיקה לצמיתות</div>
+    <button class="btn btn-danger btn-sm" onclick="clearTrash()" style="margin-bottom:1rem;">🗑️ רוקן סל מחזור</button>
+    <div id="trash-list"></div>
+  </div>
 </div>
 
 <!-- PLAN TOMORROW MODAL -->
@@ -645,6 +735,7 @@ body{font-family:'Segoe UI','Arial Hebrew',Arial,sans-serif;background:var(--bg)
     <div class="modal-row"><input type="date" id="em-date" /><input type="time" id="em-start" /><input type="time" id="em-end" /></div>
     <select id="em-type" class="inp"><option value="business">💼 עסקי</option><option value="couple">❤️ זוגי</option><option value="medical">🏥 רפואי</option><option value="personal">👤 אישי</option><option value="zoom">💻 זום</option><option value="social">🎉 חברתי</option><option value="other">📌 שונות</option></select>
     <input type="text" id="em-note" class="inp" placeholder="הערה" />
+    <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text2);margin-bottom:10px;cursor:pointer;"><input type="checkbox" id="em-add-task" /> הוסף גם כמשימה</label>
     <div class="modal-btns"><button class="btn btn-primary" onclick="saveEventModal()">שמור ✓</button><button class="btn" onclick="closeEventModal()">ביטול</button><button class="btn btn-danger hidden" id="em-del-btn" onclick="deleteEventModal()">מחק</button></div>
   </div>
 </div>
@@ -746,6 +837,96 @@ body{font-family:'Segoe UI','Arial Hebrew',Arial,sans-serif;background:var(--bg)
   </div>
 </div>
 
+
+<!-- FOCUS MODE -->
+<div class="focus-overlay hidden" id="focus-overlay">
+  <button class="focus-close" onclick="closeFocusMode()">✕ צא ממצב פוקוס</button>
+  <div class="focus-cat" id="focus-cat"></div>
+  <div class="focus-task-name" id="focus-task-name"></div>
+  <div class="focus-pri" id="focus-pri"></div>
+  <div class="focus-timer" id="focus-timer-display">00:00:00</div>
+  <div class="focus-btns">
+    <button class="btn btn-primary" id="focus-start-btn" onclick="focusTimerStart()" style="background:#2d5be3;color:#fff;border:none;padding:12px 28px;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;">▶ התחל</button>
+    <button class="btn" id="focus-pause-btn" onclick="focusTimerPause()" style="background:rgba(255,255,255,0.1);color:#fff;border:1px solid rgba(255,255,255,0.2);padding:12px 28px;border-radius:10px;font-size:15px;cursor:pointer;" disabled>⏸ השהה</button>
+    <button class="btn" onclick="focusMarkDone()" style="background:#1e8449;color:#fff;border:none;padding:12px 28px;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;">✅ הושלם</button>
+  </div>
+</div>
+
+<!-- ADD TASK TO TODAY MODAL -->
+<div class="modal-overlay hidden" id="add-today-modal" onclick="closeAddTodayModal(event)">
+  <div class="modal" onclick="event.stopPropagation()" style="max-width:460px;">
+    <div class="modal-title">➕ הוסף ל"היום שלך"</div>
+    <input type="text" id="at-text" class="inp" placeholder="שם המשימה / האירוע" />
+    <div class="modal-row">
+      <input type="time" id="at-time" />
+      <input type="time" id="at-end" />
+    </div>
+    <div class="modal-row">
+      <select id="at-type"><option value="task">✅ משימה</option><option value="event">📅 אירוע</option></select>
+      <select id="at-pri"><option value="A1">A1</option><option value="A2">A2</option><option value="A3">A3</option><option value="A4">A4</option><option value="A5">A5</option><option value="B1">B1</option><option value="B2">B2</option><option value="B3">B3</option><option value="B4">B4</option><option value="B5">B5</option><option value="C">C</option><option value="D">D</option><option value="E">E</option></select>
+      <select id="at-cat"><option value="נדלן ישראל">🏠 נדלן ישראל</option><option value="נדלן ארהב">🇺🇸 נדלן ארהב</option><option value="אישי">👤 אישי</option><option value="עבודה שכירה">💼 עבודה שכירה</option><option value="לימודים">📚 לימודים</option><option value="כושר">💪 כושר</option><option value="AI">🤖 AI</option></select>
+    </div>
+    <div class="modal-btns">
+      <button class="btn btn-primary" onclick="saveAddTaskToToday()">הוסף ✓</button>
+      <button class="btn" onclick="closeAddTodayModal()">ביטול</button>
+    </div>
+  </div>
+</div>
+
+<!-- RESCHEDULE MODAL (from today) -->
+<div class="modal-overlay hidden" id="reschedule-modal" onclick="closeRescheduleModal(event)">
+  <div class="modal" onclick="event.stopPropagation()" style="max-width:380px;">
+    <div class="modal-title">⏰ תזמן מחדש</div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:10px;" id="reschedule-task-name"></div>
+    <input type="date" id="reschedule-date" class="inp" />
+    <input type="time" id="reschedule-time" class="inp" placeholder="שעה (אופציונלי)" />
+    <div style="font-size:12px;color:var(--text3);margin-bottom:8px;">החזר לקטגוריה:</div>
+    <select id="reschedule-cat" class="inp"><option value="נדלן ישראל">🏠 נדלן ישראל</option><option value="נדלן ארהב">🇺🇸 נדלן ארהב</option><option value="אישי">👤 אישי</option><option value="עבודה שכירה">💼 עבודה שכירה</option><option value="לימודים">📚 לימודים</option><option value="כושר">💪 כושר</option><option value="AI">🤖 AI</option></select>
+    <div class="modal-btns">
+      <button class="btn btn-primary" onclick="saveReschedule()">שמור ✓</button>
+      <button class="btn" onclick="closeRescheduleModal()">ביטול</button>
+    </div>
+  </div>
+</div>
+
+<!-- PLAN NEXT WEEK MODAL -->
+<div class="modal-overlay hidden" id="plan-next-week-modal" onclick="closePlanNextWeek(event)">
+  <div class="modal" onclick="event.stopPropagation()" style="max-width:700px;max-height:85vh;overflow-y:auto;">
+    <div class="modal-title">📅 תכנון שבוע הבא</div>
+    <div id="plan-next-week-grid" style="display:flex;flex-direction:column;gap:12px;"></div>
+    <div class="modal-btns" style="margin-top:1rem;">
+      <button class="btn btn-primary" onclick="closePlanNextWeek()">סגור ✓</button>
+    </div>
+  </div>
+</div>
+
+<!-- RECURRING TIME OVERRIDE MODAL -->
+<div class="modal-overlay hidden" id="rec-time-modal" onclick="closeRecTimeModal(event)">
+  <div class="modal" onclick="event.stopPropagation()" style="max-width:340px;">
+    <div class="modal-title">⏰ שנה שעה להיום בלבד</div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:10px;" id="rec-time-task-name"></div>
+    <div class="modal-row">
+      <div><div style="font-size:11px;color:var(--text3);margin-bottom:4px;">משעה:</div><input type="time" id="rec-time-start" class="inp" style="margin:0;" /></div>
+      <div><div style="font-size:11px;color:var(--text3);margin-bottom:4px;">עד שעה:</div><input type="time" id="rec-time-end" class="inp" style="margin:0;" /></div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn btn-primary" onclick="saveRecTimeOverride()">שמור ✓</button>
+      <button class="btn" onclick="closeRecTimeModal()">ביטול</button>
+    </div>
+  </div>
+</div>
+
+<!-- PROJECT LINK PICKER MODAL -->
+<div class="modal-overlay hidden" id="proj-link-modal" onclick="closeProjLinkModal(event)">
+  <div class="modal" onclick="event.stopPropagation()" style="max-width:400px;">
+    <div class="modal-title">📁 שייך לפרויקט</div>
+    <div id="proj-link-list" style="max-height:300px;overflow-y:auto;"></div>
+    <div class="modal-btns">
+      <button class="btn" onclick="closeProjLinkModal()">ביטול</button>
+    </div>
+  </div>
+</div>
+
 <button class="fab" onclick="openQuickAdd()">+</button>
 <div class="modal-overlay hidden" id="quick-modal" onclick="closeQuickAdd(event)">
   <div class="modal" onclick="event.stopPropagation()">
@@ -796,6 +977,7 @@ const MONTHS_SHORT=['ינו','פבר','מרץ','אפר','מאי','יוני','י�
 const CAT_COLORS={'נדלן ישראל':'#185FA5','נדלן ארהב':'#0F6E56','אישי':'#993556','עבודה שכירה':'#5F5E5A','לימודים':'#534AB7','כושר':'#3B6D11','AI':'#6B21A8'};
 const CAT_ICONS={'נדלן ישראל':'🏠','נדלן ארהב':'🇺🇸','אישי':'👤','עבודה שכירה':'💼','לימודים':'📚','כושר':'💪','AI':'🤖'};
 const CATS=['נדלן ישראל','נדלן ארהב','אישי','עבודה שכירה','לימודים','כושר','AI'];
+const PRI_ORDER=['A1','A2','A3','A4','A5','B1','B2','B3','B4','B5','C','D','E'];
 const EV_CFG={
   business:{label:'עסקי',icon:'💼',color:'#1a5276',bg:'#d6eaf8'},
   couple:{label:'זוגי',icon:'❤️',color:'#a04000',bg:'#fef3cd'},
@@ -814,7 +996,7 @@ const todayStr=now.toISOString().split('T')[0];
 const todayDay=now.getDay();
 const nowH=now.getHours(),nowM=now.getMinutes();
 
-let state={big3:[],tasks:[],capture:[],ideas:[],ideaCats:[],dailyNotes:{},recurring:[
+let state={big3:[],tasks:[],capture:[],ideas:[],ideaCats:[],dailyNotes:{},trash:[],recurring:[
   {id:1,name:'שיעור אנגלית — זום',freq:'פעמיים בשבוע',days:[1,3],timeStart:'18:00',timeEnd:'19:00',cat:'לימודים',doneToday:{}},
   {id:2,name:'חדר כושר',freq:'פעמיים בשבוע',days:[2,4],timeStart:'07:00',timeEnd:'08:00',cat:'כושר',doneToday:{}},
   {id:3,name:'תרגול בוקר',freq:'יומי',days:[0,1,2,3,4,5,6],timeStart:'06:30',timeEnd:'07:00',cat:'אישי',doneToday:{}},
@@ -838,17 +1020,27 @@ function load(){
       state={...state,...p};
       state.recurring=(state.recurring||[]).map(r=>({timeStart:'',timeEnd:'',doneToday:{},...r}));
       state.events=(state.events||[]).map(e=>({timeEnd:'',archived:false,completed:false,...e}));
-      state.tasks=(state.tasks||[]).map(t=>({...t}));
+      state.tasks=(state.tasks||[]).map(t=>({...t,pri:t.pri==='A'?'A1':t.pri==='B'?'B1':t.pri||'B1'}));
       state.big3=(state.big3||[]).map(t=>({elapsed:0,...t}));
       if(!state.ideas)state.ideas=[];
       if(!state.ideaCats)state.ideaCats=[];
       if(!state.dailyNotes)state.dailyNotes={};
+      if(!state.trash)state.trash=[];
     }
   }catch(e){}
 }
 load();
 
-function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
+function toast(msg,undoFn){
+  const t=document.getElementById('toast');
+  if(undoFn){
+    t.innerHTML=msg+' <span onclick="performUndo()" style="text-decoration:underline;cursor:pointer;color:#7eb8ff;margin-right:8px;">↩ בטל</span>';
+  } else {
+    t.textContent=msg;
+  }
+  t.classList.add('show');
+  setTimeout(()=>{t.classList.remove('show');t.innerHTML='';},3500);
+}
 function evType(t){return EV_CFG[t]||EV_CFG.other;}
 function timeToMin(t){if(!t)return 0;const[h,m]=t.split(':').map(Number);return h*60+m;}
 function minToTime(m){const h=Math.floor(m/60)%24;const mn=m%60;return String(h).padStart(2,'0')+':'+String(mn).padStart(2,'0');}
@@ -980,13 +1172,14 @@ function restoreFromArchive(id){
 }
 
 function showTab(name,btn){
-  ['morning','projects','events','capture','tasks','ideas','calendar','recurring'].forEach(t=>document.getElementById('tab-'+t).classList.add('hidden'));
+  ['morning','projects','events','capture','tasks','ideas','calendar','recurring','trash'].forEach(t=>document.getElementById('tab-'+t).classList.add('hidden'));
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById('tab-'+name).classList.remove('hidden');
   btn.classList.add('active');
   if(name==='calendar')renderCalendar();
-  if(name==='tasks')renderTasks(currentFilter);
+  if(name==='tasks'){renderTasks(currentFilter);populateTaskProjSelect();}
   if(name==='recurring')renderRecurring();
+  if(name==='trash'){renderTrash();}
   if(name==='capture')renderCapture();
   if(name==='events')renderEvents(currentEventFilter);
   if(name==='projects')renderProjects();
@@ -996,13 +1189,14 @@ function showTab(name,btn){
 }
 
 function updateStats(){
+  updateProgressBar();
   document.getElementById('st-total').textContent=state.tasks.filter(t=>!t.done).length+state.big3.filter(t=>!t.done).length;
   document.getElementById('st-done').textContent=state.big3.filter(t=>t.done).length;
   document.getElementById('st-a').textContent=[...state.tasks,...state.big3].filter(t=>t.pri==='A'&&!t.done).length;
   document.getElementById('st-ev').textContent=state.events.filter(e=>e.date===todayStr&&!e.archived&&!e.completed).length+getRecurringForDay(todayDay).length;
 }
 
-function getRecurringForDay(d){return state.recurring.filter(r=>r.days&&r.days.includes(d));}
+function getRecurringForDay(d){return state.recurring.filter(r=>r.days&&r.days.includes(d)&&!(r.skipDays&&r.skipDays[todayStr]));}
 function isRecDoneToday(r){return r.doneToday&&r.doneToday[todayStr];}
 function toggleRecToday(id){
   const r=state.recurring.find(r=>r.id===id);if(!r)return;
@@ -1039,7 +1233,9 @@ function renderTodayEvents(){
     // Time
     const timeEl=document.createElement('span');
     timeEl.style.cssText='font-size:12px;font-weight:700;color:var(--accent);min-width:44px;';
-    timeEl.textContent=r.timeStart||'🔄';
+    const todayStart=(r.todayTimeOverride&&r.todayTimeOverride[todayStr])?r.todayTimeOverride[todayStr].start:r.timeStart;
+    const todayEnd=(r.todayTimeOverride&&r.todayTimeOverride[todayStr])?r.todayTimeOverride[todayStr].end:r.timeEnd;
+    timeEl.textContent=todayStart||'🔄';
     row.appendChild(timeEl);
 
     // Icon
@@ -1051,7 +1247,7 @@ function renderTodayEvents(){
     // Name
     const nameEl=document.createElement('span');
     nameEl.style.cssText=`flex:1;font-size:13px;${done?'text-decoration:line-through;color:var(--text3);':''}`;
-    nameEl.textContent=r.name+(r.timeEnd?' — '+r.timeEnd:'');
+    nameEl.textContent=r.name+(todayEnd?' — '+todayEnd:'');
     row.appendChild(nameEl);
 
     // Note preview
@@ -1073,11 +1269,32 @@ function renderTodayEvents(){
     chk.onclick=()=>toggleRecToday(r.id);
     actions.appendChild(chk);
 
+    const delRecBtn=document.createElement('span');
+    delRecBtn.style.cssText='font-size:18px;cursor:pointer;color:var(--text3);padding:0 2px;line-height:1;';
+    delRecBtn.textContent='×';
+    delRecBtn.title='הסר מהיום';
+    delRecBtn.onclick=()=>removeTodayItem('rec_'+r.id);
+    actions.appendChild(delRecBtn);
+
     const frogBtn=document.createElement('button');
     frogBtn.style.cssText='font-size:12px;padding:2px 7px;border-radius:6px;border:1px solid var(--border);background:var(--bg2);cursor:pointer;';
     frogBtn.textContent='🐸';frogBtn.title='העבר למשימות מרכזיות';
-    frogBtn.onclick=()=>sendTodayItemToBig3(r.name,r.cat,'A');
+    frogBtn.onclick=()=>sendTodayItemToBig3(r.name,r.cat,'A1');
     actions.appendChild(frogBtn);
+
+    // Recurring badge
+    const recBadge=document.createElement('span');
+    recBadge.className='rec-badge';
+    recBadge.textContent='🔄 חוזר';
+    row.appendChild(recBadge);
+
+    // Time change btn (today only)
+    const timeChangeBtn=document.createElement('button');
+    timeChangeBtn.style.cssText='font-size:11px;padding:2px 7px;border-radius:6px;border:1px solid var(--border);background:var(--bg2);cursor:pointer;';
+    timeChangeBtn.textContent='⏰ שעה';
+    timeChangeBtn.title='שנה שעה להיום בלבד';
+    timeChangeBtn.onclick=()=>openRecTimeModal(r.id,r.name);
+    actions.appendChild(timeChangeBtn);
 
     const noteBtn=document.createElement('button');
     noteBtn.style.cssText='font-size:13px;width:22px;height:22px;border-radius:50%;border:1px solid var(--border);background:var(--bg2);cursor:pointer;font-weight:700;color:var(--text2);';
@@ -1162,6 +1379,12 @@ function renderTodayEvents(){
       untBtn.onclick=()=>markEventUntreated(e.id);
       actions.appendChild(untBtn);
 
+      const resBtn=document.createElement('button');
+      resBtn.style.cssText='font-size:11px;padding:2px 7px;border-radius:6px;border:1px solid var(--border);background:var(--bg2);cursor:pointer;';
+      resBtn.textContent='⏰';resBtn.title='תזמן מחדש';
+      resBtn.onclick=()=>openReschedule(e.id,e.name,e.cat||'אישי');
+      actions.appendChild(resBtn);
+
       const frogBtn=document.createElement('button');
       frogBtn.style.cssText='font-size:12px;padding:2px 7px;border-radius:6px;border:1px solid var(--border);background:var(--bg2);cursor:pointer;';
       frogBtn.textContent='🐸';frogBtn.title='העבר למשימות מרכזיות';
@@ -1173,6 +1396,13 @@ function renderTodayEvents(){
     noteBtn.style.cssText='font-size:13px;width:22px;height:22px;border-radius:50%;border:1px solid var(--border);background:var(--bg2);cursor:pointer;font-weight:700;color:var(--text2);';
     noteBtn.textContent='+';noteBtn.title='הוסף הערה';
     actions.appendChild(noteBtn);
+
+    const delEvBtn=document.createElement('span');
+    delEvBtn.style.cssText='font-size:20px;cursor:pointer;color:var(--text3);padding:0 2px;line-height:1;';
+    delEvBtn.textContent='×';
+    delEvBtn.title='מחק מהיום';
+    delEvBtn.onclick=()=>removeTodayItem(e.id);
+    actions.appendChild(delEvBtn);
 
     row.appendChild(actions);
     card.appendChild(row);
@@ -1225,16 +1455,16 @@ function renderTaskPicker(){
 }
 function addToBig3Instant(id){
   const t=state.tasks.find(t=>t.id===id);if(!t)return;
-  if(state.big3.find(b=>b.text===t.text&&!b.done)){toast('כבר במשימות המרכזיות ✓');return;}
-  state.big3.push({id:Date.now(),text:t.text,pri:t.pri,cat:t.cat,done:false});
+  if(state.big3.find(b=>b.taskSourceId===id||b.text===t.text&&!b.done)){toast('כבר במשימות המרכזיות ✓');return;}
+  state.big3.unshift({id:Date.now(),text:t.text,pri:t.pri||'A1',cat:t.cat,done:false});
   save();renderBig3();renderTaskPicker();updateStats();toast('"'+t.text.substring(0,20)+'" נוסף 🎯');
 }
 function togglePickTask(id){}
 function addSelectedToBig3(){document.getElementById('task-picker').classList.add('hidden');}
 function addBig3New(){
   const v=document.getElementById('big3-input').value.trim();if(!v)return;
-  state.big3.push({id:Date.now(),text:v,pri:document.getElementById('big3-pri').value,cat:document.getElementById('big3-cat').value,done:false});
-  document.getElementById('big3-input').value='';save();renderBig3();updateStats();
+  state.big3.unshift({id:Date.now(),text:v,pri:document.getElementById('big3-pri').value,cat:document.getElementById('big3-cat').value,done:false});
+  document.getElementById('big3-input').value='';save();renderBig3();updateStats();updateProgressBar();
 }
 function toggleBig3Done(){
   big3DoneVisible=!big3DoneVisible;
@@ -1242,8 +1472,8 @@ function toggleBig3Done(){
   const cnt=state.big3.filter(t=>t.done).length;
   document.getElementById('big3-done-lbl').textContent=(big3DoneVisible?'▲':'▼')+` הושלמו היום (${cnt})`;
 }
-function clearBig3Done(){if(!confirm('למחוק את כל ההושלמו?'))return;state.big3=state.big3.filter(t=>!t.done);save();renderBig3();updateStats();}
-function renderBig3(){
+function clearBig3Done(){if(!confirm('למחוק את כל ההושלמו?'))return;const done=state.big3.filter(t=>t.done);state.big3=state.big3.filter(t=>!t.done);pushUndo('מחיקת כל ההושלמו ('+done.length+')',()=>{state.big3=[...state.big3,...done];save();renderBig3();updateStats();});save();renderBig3();updateStats();toast('נוקה ✓ — Ctrl+Z לביטול');}
+function renderBig3(){updateProgressBar();
   const active=state.big3.filter(t=>!t.done);
   const done=state.big3.filter(t=>t.done);
   const activeEl=document.getElementById('big3-active-list');
@@ -1251,7 +1481,7 @@ function renderBig3(){
     <div class="big3-item" style="position:relative;padding:10px 12px;gap:8px;">
       <div class="big3-num">${i+1}</div>
       <div class="check" onclick="toggleBig3(${t.id})"></div>
-      <span class="badge badge-${t.pri}" onclick="cycleBig3Pri(${t.id})" style="cursor:pointer;" title="לחץ לשינוי עדיפות">${t.pri}</span>
+      <span class="badge badge-${priBase(t.pri||'A1')}" onclick="openPriMenu(this,${t.id},'big3')" style="cursor:pointer;position:relative;" title="לחץ לשינוי עדיפות">${priLabel(t.pri||'A1')}</span>
       <span style="flex:1;font-size:14px;${t.untreated?'border-right:3px solid #ffc107;padding-right:4px;':''}">${t.untreated?'<span style="font-size:10px;background:#fff3cd;color:#856404;padding:1px 5px;border-radius:4px;margin-left:4px;">⚠️</span>':''} ${t.text}</span>
       <span style="font-size:11px;color:${CAT_COLORS[t.cat]};font-weight:700;">${t.cat}</span>
       ${t.timeBlockStart?`<span style="font-size:10px;color:var(--accent);background:#e8f0ff;padding:1px 5px;border-radius:4px;">⏰${t.timeBlockStart}</span>`:''}
@@ -1259,6 +1489,8 @@ function renderBig3(){
       ${t.elapsed?`<span style="font-size:10px;color:var(--success);background:#d5f5e3;padding:1px 5px;border-radius:4px;">⏱️${formatTime(t.elapsed)}</span>`:''}
       <div class="big3-item-actions">
         <button class="btn btn-xs" onclick="openTimerModal(${t.id})" style="background:#1a1a2e;color:#fff;border-color:#1a1a2e;font-size:10px;">⏱️</button>
+        <button class="btn btn-xs" onclick="openFocusMode(${t.id},'big3')" style="background:#6B21A8;color:#fff;border-color:#6B21A8;font-size:10px;">🎯 פוקוס</button>
+        <button class="btn btn-xs" onclick="openProjLinkModal(${t.id},'big3')" style="font-size:10px;" title="שייך לפרויקט">${t.projectName?'📁 '+t.projectName.substring(0,8):'📁'}</button>
         <button class="btn-untreated" onclick="markBig3Untreated(${t.id})" style="font-size:10px;">${t.untreated?'✓':'⚠️'}</button>
         <button class="btn btn-xs" onclick="returnBig3ToTasks(${t.id})" title="החזר למשימות" style="font-size:10px;">↩</button>
         <button class="btn btn-xs" onclick="postponeBig3Task(${t.id})" title="דחה ליום אחר" style="font-size:10px;">📅</button>
@@ -1292,7 +1524,7 @@ function delBig3(id){state.big3=state.big3.filter(t=>t.id!==id);save();renderBig
 function markBig3Untreated(id){const t=state.big3.find(t=>t.id===id);if(!t)return;t.untreated=!t.untreated;if(t.untreated&&t.done)t.done=false;save();renderBig3();toast(t.untreated?'סומן ⚠️':'הוסר הסימון');}
 
 // PROJECTS
-function addProject(){const name=document.getElementById('proj-name').value.trim();if(!name)return;state.projects.push({id:Date.now(),name,cat:document.getElementById('proj-cat').value,steps:[],links:[],notes:'',continueStep:null});document.getElementById('proj-name').value='';save();renderProjects();toast('פרויקט נוצר ✓');}
+function addProject(){const name=document.getElementById('proj-name').value.trim();if(!name)return;state.projects.unshift({id:Date.now(),name,cat:document.getElementById('proj-cat').value,steps:[],links:[],notes:'',continueStep:null});document.getElementById('proj-name').value='';save();renderProjects();toast('פרויקט נוצר ✓');}
 function calcProgress(p){if(!p.steps.length)return 0;return Math.round(p.steps.filter(s=>s.done).length/p.steps.length*100);}
 function renderProjects(){
   const el=document.getElementById('projects-list');
@@ -1310,7 +1542,7 @@ function renderProjects(){
 function openProjModal(id){currentProjId=id;const p=state.projects.find(p=>p.id===id);if(!p)return;document.getElementById('pm-title').textContent='📁 '+p.name;document.getElementById('pm-notes').value=p.notes||'';renderPmSteps(p);renderPmLinks(p);document.getElementById('proj-modal').classList.remove('hidden');}
 function closeProjModal(e){if(!e||e.target===document.getElementById('proj-modal'))document.getElementById('proj-modal').classList.add('hidden');}
 function saveProject(){const p=state.projects.find(p=>p.id===currentProjId);if(!p)return;p.notes=document.getElementById('pm-notes').value;save();renderProjects();toast('נשמר ✓');document.getElementById('proj-modal').classList.add('hidden');}
-function deleteProject(){if(!confirm('למחוק?'))return;state.projects=state.projects.filter(p=>p.id!==currentProjId);save();renderProjects();document.getElementById('proj-modal').classList.add('hidden');}
+function deleteProject(){if(!confirm('למחוד?'))return;const p=state.projects.find(p=>p.id===currentProjId);if(!p)return;const copy={...p,steps:[...p.steps],links:[...(p.links||[])]};addToTrash('project',copy,copy.name);state.projects=state.projects.filter(p=>p.id!==currentProjId);pushUndo('מחיקת פרויקט: '+copy.name,()=>{state.projects.unshift(copy);state.trash=state.trash.filter(tr=>tr.item.id!==copy.id);save();renderProjects();});save();renderProjects();document.getElementById('proj-modal').classList.add('hidden');toast('נמחק ✓ — Ctrl+Z או סל מחזור לשחזור');}
 function renderPmSteps(p){
   const el=document.getElementById('pm-steps');
   if(!p.steps.length){el.innerHTML='<div class="empty" style="margin-bottom:8px;">אין שלבים</div>';return;}
@@ -1330,10 +1562,10 @@ function renderPmLinks(p){
 }
 function addStep(){const v=document.getElementById('pm-step-input').value.trim();if(!v)return;const p=state.projects.find(p=>p.id===currentProjId);if(!p)return;p.steps.push({id:Date.now(),text:v,done:false});document.getElementById('pm-step-input').value='';save();renderPmSteps(p);renderProjects();}
 function toggleStep(sid){const p=state.projects.find(p=>p.id===currentProjId);if(!p)return;const s=p.steps.find(s=>s.id===sid);if(s){s.done=!s.done;if(s.done&&p.continueStep===sid)p.continueStep=null;}save();renderPmSteps(p);renderProjects();}
-function delStep(sid){const p=state.projects.find(p=>p.id===currentProjId);if(!p)return;p.steps=p.steps.filter(s=>s.id!==sid);if(p.continueStep===sid)p.continueStep=null;save();renderPmSteps(p);renderProjects();}
+function delStep(sid){const p=state.projects.find(p=>p.id===currentProjId);if(!p)return;const s=p.steps.find(s=>s.id===sid);if(!s)return;const idx=p.steps.indexOf(s);p.steps=p.steps.filter(s=>s.id!==sid);if(p.continueStep===sid)p.continueStep=null;pushUndo('מחיקת שלב: '+s.text,()=>{p.steps.splice(idx,0,s);save();renderPmSteps(p);renderProjects();});save();renderPmSteps(p);renderProjects();toast('נמחק ✓ — Ctrl+Z לביטול');}
 function setContinue(sid){const p=state.projects.find(p=>p.id===currentProjId);if(!p)return;p.continueStep=sid;save();renderPmSteps(p);toast('סומן 📌');}
 function addLink(){const label=document.getElementById('pm-link-label').value.trim();const url=document.getElementById('pm-link-url').value.trim();if(!url)return;const p=state.projects.find(p=>p.id===currentProjId);if(!p)return;if(!p.links)p.links=[];p.links.push({id:Date.now(),label:label||url,url});document.getElementById('pm-link-label').value='';document.getElementById('pm-link-url').value='';save();renderPmLinks(p);}
-function delLink(lid){const p=state.projects.find(p=>p.id===currentProjId);if(!p)return;p.links=p.links.filter(l=>l.id!==lid);save();renderPmLinks(p);}
+function delLink(lid){const p=state.projects.find(p=>p.id===currentProjId);if(!p)return;const l=p.links.find(l=>l.id===lid);if(!l)return;const idx=p.links.indexOf(l);p.links=p.links.filter(l=>l.id!==lid);pushUndo('מחיקת קישור: '+(l.label||l.url),()=>{p.links.splice(idx,0,l);save();renderPmLinks(p);});save();renderPmLinks(p);toast('נמחק ✓ — Ctrl+Z לביטול');}
 function openStepModal(sid,stext){currentStepInfo={sid,stext,projId:currentProjId};document.getElementById('sm-step-name').textContent=stext;document.getElementById('step-modal').classList.remove('hidden');}
 function closeStepModal(e){if(!e||e.target===document.getElementById('step-modal'))document.getElementById('step-modal').classList.add('hidden');}
 function closeStepEventModal(e){if(!e||e.target===document.getElementById('step-event-modal'))document.getElementById('step-event-modal').classList.add('hidden');}
@@ -1398,7 +1630,7 @@ function saveStepAsEvent(){if(!currentStepInfo)return;const date=document.getEle
 // EVENTS
 function addEvent(){
   const name=document.getElementById('ev-name').value.trim();const date=document.getElementById('ev-date').value;if(!name||!date){toast('שם ותאריך חובה');return;}
-  state.events.push({id:Date.now(),name,date,timeStart:document.getElementById('ev-start').value,timeEnd:document.getElementById('ev-end').value,type:document.getElementById('ev-type').value,note:document.getElementById('ev-note').value.trim(),archived:false,completed:false});
+  state.events.unshift({id:Date.now(),name,date,timeStart:document.getElementById('ev-start').value,timeEnd:document.getElementById('ev-end').value,type:document.getElementById('ev-type').value,note:document.getElementById('ev-note').value.trim(),archived:false,completed:false});
   document.getElementById('ev-name').value='';document.getElementById('ev-note').value='';document.getElementById('ev-start').value='';document.getElementById('ev-end').value='';document.getElementById('ev-date').value=todayStr;
   save();renderEvents(currentEventFilter);updateStats();renderTodayEvents();toast('אירוע נוסף ✓');
   if(!document.getElementById('tab-calendar').classList.contains('hidden'))renderCalendar();
@@ -1408,7 +1640,14 @@ function filterEvents(f,btn){currentEventFilter=f;document.querySelectorAll('.fi
 function renderEvents(filter){
   const el=document.getElementById('events-list');
   // Active = not archived, not completed
-  let evs=state.events.filter(e=>!e.archived&&!e.completed).sort((a,b)=>a.date.localeCompare(b.date)||(a.timeStart||'').localeCompare(b.timeStart||''));
+  // Sort: today first, future next, past at bottom
+  let evs=state.events.filter(e=>!e.archived&&!e.completed).sort((a,b)=>{
+    const aFuture=a.date>=todayStr, bFuture=b.date>=todayStr;
+    if(aFuture&&!bFuture)return -1;
+    if(!aFuture&&bFuture)return 1;
+    if(aFuture&&bFuture)return a.date.localeCompare(b.date)||(a.timeStart||'').localeCompare(b.timeStart||'');
+    return b.date.localeCompare(a.date); // past: newest first
+  });
   if(filter==='today')evs=evs.filter(e=>e.date===todayStr);
   else if(filter==='upcoming')evs=evs.filter(e=>e.date>=todayStr);
   else if(Object.keys(EV_CFG).includes(filter))evs=evs.filter(e=>e.type===filter);
@@ -1432,7 +1671,7 @@ function renderEvents(filter){
   }).join(''):'<div class="empty">אין אירועים פעילים</div>';
 
   // Archive
-  const archived=state.events.filter(e=>e.archived||e.completed);
+  const archived=state.events.filter(e=>e.archived||e.completed).sort((a,b)=>b.date.localeCompare(a.date));
   const archSec=document.getElementById('archive-section');
   const archList=document.getElementById('archive-list');
   const archCount=document.getElementById('archive-count');
@@ -1459,7 +1698,7 @@ function toggleArchive(){
   document.getElementById('archive-list').style.display=archiveVisible?'block':'none';
   document.getElementById('archive-toggle-lbl').textContent=archiveVisible?'▲ הסתר':'▼ הצג';
 }
-function delEvent(id){state.events=state.events.filter(e=>e.id!==id);save();renderEvents(currentEventFilter);updateStats();renderTodayEvents();if(!document.getElementById('tab-calendar').classList.contains('hidden'))renderCalendar();}
+function delEvent(id){const e=state.events.find(e=>e.id===id);if(!e)return;const copy={...e};addToTrash('event',copy,copy.name);state.events=state.events.filter(e=>e.id!==id);pushUndo('מחיקת אירוע: '+copy.name,()=>{state.events.unshift(copy);state.trash=state.trash.filter(tr=>tr.item.id!==copy.id);save();renderEvents(currentEventFilter);updateStats();renderTodayEvents();});save();renderEvents(currentEventFilter);updateStats();renderTodayEvents();if(!document.getElementById('tab-calendar').classList.contains('hidden'))renderCalendar();toast('נמחק ✓ — Ctrl+Z או סל מחזור לשחזור');}
 function exportICS(){
   if(!state.events.length){toast('אין אירועים');return;}
   let ics='BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Task Master//HE\r\n';
@@ -1500,10 +1739,18 @@ function saveEventModal(){
   const name=document.getElementById('em-name').value.trim();const date=document.getElementById('em-date').value;if(!name||!date){toast('שם ותאריך חובה');return;}
   const data={name,date,timeStart:document.getElementById('em-start').value,timeEnd:document.getElementById('em-end').value,type:document.getElementById('em-type').value,note:document.getElementById('em-note').value.trim()};
   if(editingEventId){const e=state.events.find(e=>e.id===editingEventId);if(e)Object.assign(e,data);}
-  else state.events.push({id:Date.now(),...data,archived:false,completed:false});
+  else{
+    state.events.unshift({id:Date.now(),...data,archived:false,completed:false});
+    const addTask=document.getElementById('em-add-task');
+    if(addTask&&addTask.checked&&data.name){
+      const cat=Object.keys(EV_CFG).includes(data.type)?'אישי':data.type;
+      state.tasks.unshift({id:Date.now()+1,text:data.name,pri:'B1',cat:'אישי',link:'',done:false,createdAt:todayStr});
+      toast('נוסף גם למשימות ✓');
+    }
+  }
   save();renderEvents(currentEventFilter);updateStats();renderTodayEvents();renderCalendar();document.getElementById('event-modal').classList.add('hidden');toast('נשמר ✓');
 }
-function deleteEventModal(){if(!confirm('למחוק?'))return;state.events=state.events.filter(e=>e.id!==editingEventId);save();renderEvents(currentEventFilter);updateStats();renderTodayEvents();renderCalendar();document.getElementById('event-modal').classList.add('hidden');}
+function deleteEventModal(){if(!confirm('למחוק?'))return;const e=state.events.find(e=>e.id===editingEventId);if(!e)return;const copy={...e};addToTrash('event',copy,copy.name);state.events=state.events.filter(e=>e.id!==editingEventId);pushUndo('מחיקת אירוע: '+copy.name,()=>{state.events.unshift(copy);state.trash=state.trash.filter(tr=>tr.item.id!==copy.id);save();renderEvents(currentEventFilter);updateStats();renderTodayEvents();renderCalendar();});save();renderEvents(currentEventFilter);updateStats();renderTodayEvents();renderCalendar();document.getElementById('event-modal').classList.add('hidden');toast('נמחק ✓ — Ctrl+Z או סל מחזור לשחזור');}
 
 // TASK TO EVENT
 function openTaskAsEvent(taskId){currentTaskForEvent=taskId;const t=[...state.tasks,...state.big3].find(t=>t.id===taskId);if(!t)return;document.getElementById('te-task-name').textContent='📋 '+t.text;document.getElementById('te-date').value=todayStr;document.getElementById('task-event-modal').classList.remove('hidden');}
@@ -1517,7 +1764,9 @@ function saveTaskAsEvent(){
 }
 
 // CAPTURE
-function addCapture(){const v=document.getElementById('capture-input').value.trim();if(!v)return;v.split('\n').filter(l=>l.trim()).forEach(line=>state.capture.push({id:Date.now()+Math.random(),text:line.trim()}));document.getElementById('capture-input').value='';save();renderCapture();updateStats();toast('נשמר 📥');}
+function addCapture(){const v=document.getElementById('capture-input').value.trim();if(!v)return;const capCat=document.getElementById('cap-pre-cat')?document.getElementById('cap-pre-cat').value:'';
+  const capPri=document.getElementById('cap-pre-pri')?document.getElementById('cap-pre-pri').value:'';
+  v.split('\n').filter(l=>l.trim()).forEach(line=>state.capture.unshift({id:Date.now()+Math.random(),text:line.trim(),cat:capCat||undefined,pri:capPri||undefined}));document.getElementById('capture-input').value='';save();renderCapture();updateStats();toast('נשמר 📥');}
 function renderCapture(){
   const el=document.getElementById('capture-list');document.getElementById('cap-count').textContent=state.capture.length+' פריטים';
   if(!state.capture.length){el.innerHTML='<div class="empty">התיבה ריקה 🧠</div>';return;}
@@ -1528,7 +1777,8 @@ function renderCapture(){
     <select id="cappri_${cap.id}" style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);font-family:inherit;">
       <option value="B">B</option><option value="A">A</option><option value="C">C</option><option value="D">D</option><option value="E">E</option>
     </select>
-    <button class="btn btn-primary btn-xs" onclick="convertCaptureWithPri(${cap.id})">העבר →</button>
+    <button class="btn btn-primary btn-xs" onclick="convertCaptureWithPri(${cap.id})">✅ משימה</button>
+    <button class="btn btn-xs" onclick="convertCaptureToProject(${cap.id})">📁 פרויקט</button>
     <span class="task-del" style="opacity:1;" onclick="delCapture(${cap.id})">×</span>
   </div>`).join('');
 }
@@ -1543,12 +1793,13 @@ function convertCaptureWithPri(id){
   state.capture=state.capture.filter(c=>c.id!==id);
   toast('הועבר כ-'+pri+' ל'+cat+' ✓');save();renderCapture();updateStats();
 }
-function delCapture(id){state.capture=state.capture.filter(c=>c.id!==id);save();renderCapture();updateStats();}
+function delCapture(id){const c=state.capture.find(c=>c.id===id);if(!c)return;const copy={...c};addToTrash('capture',copy,copy.text);state.capture=state.capture.filter(c=>c.id!==id);pushUndo('מחיקת לכידה: '+copy.text.substring(0,20),()=>{state.capture.unshift(copy);state.trash=state.trash.filter(tr=>tr.item.id!==copy.id);save();renderCapture();updateStats();});save();renderCapture();updateStats();toast('נמחק ✓ — Ctrl+Z או סל מחזור לשחזור');}
 
 // TASKS
 function addTask(){
   const v=document.getElementById('task-input').value.trim();if(!v)return;
-  state.tasks.push({id:Date.now(),text:v,pri:document.getElementById('task-pri').value,cat:document.getElementById('task-cat').value,link:document.getElementById('task-link').value.trim(),done:false,createdAt:todayStr});
+  const projEl=document.getElementById('task-proj');const projId=projEl&&projEl.value?parseInt(projEl.value):null;const projObj=projId?state.projects.find(p=>p.id===projId):null;
+  state.tasks.unshift({id:Date.now(),text:v,pri:document.getElementById('task-pri').value,cat:document.getElementById('task-cat').value,link:document.getElementById('task-link').value.trim(),done:false,createdAt:todayStr,projectId:projId||undefined,projectName:projObj?projObj.name:undefined});
   document.getElementById('task-input').value='';document.getElementById('task-link').value='';
   save();renderTasks(currentFilter);updateStats();
 }
@@ -1558,7 +1809,7 @@ function renderTasks(filter){
   const activeCats=filter==='all'?CATS:[filter];
   const LIMIT=4;
   grid.innerHTML=activeCats.map(cat=>{
-    const tasks=state.tasks.filter(t=>t.cat===cat).sort((a,b)=>a.pri.localeCompare(b.pri));
+    const tasks=state.tasks.filter(t=>t.cat===cat).sort((a,b)=>{const pa=PRI_ORDER.indexOf(a.pri)<0?PRI_ORDER.indexOf('C'):PRI_ORDER.indexOf(a.pri);const pb2=PRI_ORDER.indexOf(b.pri)<0?PRI_ORDER.indexOf('C'):PRI_ORDER.indexOf(b.pri);if(pa!==pb2)return pa-pb2;return(b.id||0)-(a.id||0);});
     const active=tasks.filter(t=>!t.done);
     const done=tasks.filter(t=>t.done);
     const catKey=cat.replace(/\s/g,'_');
@@ -1567,9 +1818,9 @@ function renderTasks(filter){
     function taskHtml(t){
       return`<div class="task-item">
         <div class="check" onclick="toggleTask(${t.id})"></div>
-        <span class="badge badge-${t.pri}" style="font-size:10px;cursor:pointer;" onclick="cycleTaskPri(${t.id})" title="שנה עדיפות">${t.pri}</span>
+        <span class="badge badge-${priBase(t.pri||'C')}" style="font-size:10px;cursor:pointer;position:relative;" onclick="openPriMenu(this,${t.id},'task')" title="שנה עדיפות">${priLabel(t.pri||'C')}</span>
         <div style="flex:1;">
-          <span class="task-text" style="${t.untreated?'border-right:3px solid #ffc107;padding-right:4px;':''}">${t.untreated?'<span style="font-size:10px;background:#fff3cd;color:#856404;padding:1px 5px;border-radius:4px;margin-left:4px;">⚠️</span>':''} ${t.text}${t.link?` <a href="${t.link}" target="_blank" style="font-size:11px;color:var(--accent);">🔗</a>`:''}${t.createdAt?` <span style="font-size:10px;color:var(--text3);">📝 ${t.createdAt}</span>`:''}</span>
+          <span class="task-text" style="${t.untreated?'border-right:3px solid #ffc107;padding-right:4px;':''}">${t.untreated?'<span style="font-size:10px;background:#fff3cd;color:#856404;padding:1px 5px;border-radius:4px;margin-left:4px;">⚠️</span>':''} ${t.text}${t.link?` <a href="${t.link}" target="_blank" style="font-size:11px;color:var(--accent);">🔗</a>`:''}${t.createdAt?` <span style="font-size:10px;color:var(--text3);">📝 ${t.createdAt.split('-').reverse().join('/')}</span>`:''}</span>
           ${t.note?`<div class="task-note">${t.note}</div>`:''}
           <div id="tasknote_${t.id}" class="hidden" style="margin-top:4px;"><textarea class="task-note-input" rows="2" placeholder="הערה..." onblur="saveTaskNote(${t.id},this.value)">${t.note||''}</textarea></div>
           <button onclick="toggleTaskNote(${t.id})" style="font-size:10px;color:var(--text3);border:none;background:none;cursor:pointer;">✏️ ${t.note?'ערוך':'+ הערה'}</button>
@@ -1591,6 +1842,7 @@ function renderTasks(filter){
     const doneHtml=done.length?`<div class="completed-section">
       <div class="completed-header" onclick="toggleDoneSection('${doneId}')">
         <span class="completed-toggle" id="toggle_${doneId}">▼ הושלמו (${done.length})</span>
+        <button class="btn btn-xs btn-danger" onclick="event.stopPropagation();deleteCatDone('${cat}')" style="opacity:0.8;">🗑️ מחק הכל</button>
       </div>
       <div id="${doneId}" style="display:none;">
         ${done.map(t=>`<div class="task-item" style="opacity:0.6;">
@@ -1605,6 +1857,7 @@ function renderTasks(filter){
     return`<div class="cat-card"><div class="cat-header"><span class="cat-name" style="color:${CAT_COLORS[cat]}">${cat}</span><span class="cat-count">${active.length} פעיל${done.length?' · '+done.length+' הושלם':''}</span></div>${activeHtml}${doneHtml}</div>`;
   }).join('');
 }
+function deleteCatDone(cat){if(!confirm('למחוק את כל ההושלמו ב"'+cat+'"?'))return;const done=state.tasks.filter(t=>t.cat===cat&&t.done);state.tasks=state.tasks.filter(t=>!(t.cat===cat&&t.done));pushUndo('מחיקת הושלמו: '+cat,()=>{state.tasks=[...state.tasks,...done];save();renderTasks(currentFilter);updateStats();});save();renderTasks(currentFilter);updateStats();toast('נוקה ✓ — Ctrl+Z לביטול');}
 function toggleDoneSection(id){const el=document.getElementById(id);const tog=document.getElementById('toggle_'+id);if(!el)return;const open=el.style.display==='block';el.style.display=open?'none':'block';const cat=id.replace('done_','').replace(/_/g,' ');const cnt=state.tasks.filter(t=>t.cat===cat&&t.done).length;tog.innerHTML=(open?'▼':'▲')+` הושלמו (${cnt})`;}
 function toggleTask(id){toggleTaskWithUndo(id);}
 function undoTask(id){const t=state.tasks.find(t=>t.id===id);if(t)t.done=false;save();renderTasks(currentFilter);updateStats();}
@@ -1647,7 +1900,9 @@ function buildCalEv(e){
 
 function renderCalendar(){
   const c=document.getElementById('cal-container');
-  calView==='week'?renderWeekCal(c):renderDayCal(c);
+  if(calView==='month')renderMonthCal(c);
+  else if(calView==='week')renderWeekCal(c);
+  else renderDayCal(c);
 }
 
 function buildTableCal(days){
@@ -1719,7 +1974,8 @@ function buildCalEvInSlot(e,slotHour){
 
 function renderWeekCal(c){
   const base=new Date(now);base.setDate(now.getDate()-now.getDay()+calOffset*7);
-  const days=Array.from({length:7},(_,i)=>{const d=new Date(base);d.setDate(base.getDate()+i);return d;});
+  // RTL: Saturday(6) ... Sunday(0)
+  const days=Array.from({length:7},(_,i)=>{const d=new Date(base);d.setDate(base.getDate()+(6-i));return d;});
   document.getElementById('cal-title').textContent=
     days[0].getDate()+' '+MONTHS_SHORT[days[0].getMonth()]+' — '+
     days[6].getDate()+' '+MONTHS_SHORT[days[6].getMonth()]+' '+days[0].getFullYear();
@@ -1809,8 +2065,12 @@ function saveEditRec(){
 }
 function deleteFromEditRec(){
   if(!confirm('למחוק?'))return;
+  const r=state.recurring.find(r=>r.id===editingRecId);if(!r)return;
+  const copy={...r,days:[...(r.days||[])]};
+  addToTrash('recurring',copy,copy.name);
   state.recurring=state.recurring.filter(r=>r.id!==editingRecId);
-  save();renderRecurring();document.getElementById('edit-rec-modal').classList.add('hidden');toast('נמחק');
+  pushUndo('מחיקת חוזרת: '+copy.name,()=>{state.recurring.unshift(copy);state.trash=state.trash.filter(tr=>tr.item.id!==copy.id);save();renderRecurring();});
+  save();renderRecurring();document.getElementById('edit-rec-modal').classList.add('hidden');toast('נמחק ✓ — Ctrl+Z או סל מחזור לשחזור');
 }
 function renderRecurring(){
   const el=document.getElementById('recurring-list');
@@ -1850,7 +2110,7 @@ function saveQuickAdd(){
   if(!document.getElementById('tab-calendar').classList.contains('hidden'))renderCalendar();
 }
 
-function clearAllDone(){if(!confirm('למחוק הושלמו?'))return;state.tasks=state.tasks.filter(t=>!t.done);state.big3=state.big3.filter(t=>!t.done);save();renderTasks(currentFilter);renderBig3();updateStats();toast('נוקה ✓');}
+function clearAllDone(){if(!confirm('למחוק הושלמו?'))return;const doneTasks=state.tasks.filter(t=>t.done);const doneBig3=state.big3.filter(t=>t.done);state.tasks=state.tasks.filter(t=>!t.done);state.big3=state.big3.filter(t=>!t.done);pushUndo('ניקוי כל ההושלמו',()=>{state.tasks=[...state.tasks,...doneTasks];state.big3=[...state.big3,...doneBig3];save();renderTasks(currentFilter);renderBig3();updateStats();});save();renderTasks(currentFilter);renderBig3();updateStats();toast('נוקה ✓ — Ctrl+Z לביטול');}
 function exportData(){const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='taskmaster_backup_'+todayStr+'.json';a.click();URL.revokeObjectURL(url);toast('גיבוי 💾');}
 function importData(){document.getElementById('import-file').click();}
 function loadImport(e){const file=e.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=function(ev){try{state=JSON.parse(ev.target.result);save();renderBig3();renderTodayEvents();updateStats();toast('יובא ✓');}catch(err){toast('שגיאה');}};reader.readAsText(file);}
@@ -1889,6 +2149,7 @@ function renderDailyNotes(){
           <button class="note-action-btn" onclick="noteToCapture(${n.id})">📥 ללכידה</button>
           <button class="note-action-btn" onclick="noteToTomorrow(${n.id})">📅 למחר</button>
           <button class="note-action-btn" style="background:#1a1a2e;color:#fff;border-color:#1a1a2e;" onclick="noteToToday(${n.id})">🎯 להיום שלי</button>
+          <button class="note-action-btn" onclick="editNote(${n.id})">✏️ ערוך</button>
           <button class="note-action-btn" style="color:var(--danger);" onclick="deleteNote(${n.id})">🗑️</button>
         </div>
       </div>
@@ -1924,9 +2185,21 @@ function noteToTomorrow(id){
   state.dailyNotes[todayStr]=notes.filter(n=>n.id!==id);
   save();renderDailyNotes();toast('הועבר למחר 📅');
 }
-function deleteNote(id){
-  state.dailyNotes[todayStr]=getDailyNotes().filter(n=>n.id!==id);
+function editNote(id){
+  const notes=getDailyNotes();const n=notes.find(n=>n.id===id);if(!n)return;
+  const inp=document.getElementById('daily-note-input');
+  if(inp){inp.value=n.text;inp.focus();}
+  // Remove old note (will be re-added when user clicks הוסף)
+  state.dailyNotes[todayStr]=notes.filter(n=>n.id!==id);
   save();renderDailyNotes();
+}
+function deleteNote(id){
+  const notes=getDailyNotes();const n=notes.find(n=>n.id===id);if(!n)return;
+  const copy={...n,dateKey:todayStr};
+  addToTrash('note',copy,copy.text);
+  state.dailyNotes[todayStr]=notes.filter(n=>n.id!==id);
+  pushUndo('מחיקת הערה: '+copy.text.substring(0,20),()=>{getDailyNotes().unshift(copy);state.trash=state.trash.filter(tr=>tr.item.id!==copy.id);save();renderDailyNotes();});
+  save();renderDailyNotes();toast('נמחק ✓ — Ctrl+Z או סל מחזור לשחזור');
 }
 
 let notesHistoryVisible=false;
@@ -1993,9 +2266,10 @@ function toggleTaskWithUndo(id){
 function deleteTaskWithUndo(id){
   const t=state.tasks.find(t=>t.id===id);if(!t)return;
   const copy={...t};const idx=state.tasks.indexOf(t);
+  addToTrash('task',copy,copy.text);
   state.tasks=state.tasks.filter(t=>t.id!==id);
-  pushUndo('מחיקת משימה: '+copy.text,()=>{state.tasks.splice(idx,0,copy);save();renderTasks(currentFilter);updateStats();});
-  save();renderTasks(currentFilter);updateStats();
+  pushUndo('מחיקת משימה: '+copy.text,()=>{state.tasks.splice(idx,0,copy);state.trash=state.trash.filter(tr=>tr.item.id!==copy.id);save();renderTasks(currentFilter);updateStats();});
+  save();renderTasks(currentFilter);updateStats();toast('נמחק ✓ — Ctrl+Z או סל מחזור לשחזור');
 }
 function toggleBig3WithUndo(id){
   const t=state.big3.find(t=>t.id===id);if(!t)return;
@@ -2103,6 +2377,7 @@ function toggleScheduleView(type){
   currentScheduleView=type;
   el.classList.remove('hidden');
   if(type==='tomorrow')renderScheduleTomorrow(el);
+  else if(type==='nextweek')renderScheduleNextWeek(el);
   else renderScheduleWeek(el);
 }
 
@@ -2424,11 +2699,14 @@ function renderIdeaCats(){
 
 function delIdeaCat(cat){
   if(!confirm('למחוק קטגוריה "'+cat+'"? הרעיונות ישארו ללא קטגוריה'))return;
+  const prevCats=[...state.ideaCats];
+  const prevIdeas=state.ideas.map(i=>({...i}));
   state.ideaCats=state.ideaCats.filter(c=>c!==cat);
   if(!state.ideas)state.ideas=[];
   state.ideas.forEach(i=>{if(i.cat===cat)i.cat='';});
   if(currentIdeaCat===cat)currentIdeaCat='all';
-  save();renderIdeaCats();renderIdeas();
+  pushUndo('מחיקת קטגוריה: '+cat,()=>{state.ideaCats=prevCats;state.ideas=prevIdeas;save();renderIdeaCats();renderIdeas();});
+  save();renderIdeaCats();renderIdeas();toast('נמחק ✓ — Ctrl+Z לביטול');
 }
 
 function filterIdeas(cat,btn){
@@ -2514,6 +2792,8 @@ function saveIdea(){
   if(currentIdeaId){const i=state.ideas.find(i=>i.id===currentIdeaId);if(i)Object.assign(i,data);}
   else state.ideas.push({id:Date.now(),...data,createdAt:todayStr});
   save();renderIdeas();scheduleIdeaReminders();
+  document.getElementById('idea-modal').classList.add('hidden');toast('רעיון נשמר ✓');
+}
 
 function quickConvertFromList(id,to){
   // Show a small inline prompt for category
@@ -2526,7 +2806,7 @@ function quickConvertFromList(id,to){
     <select id="inline-cat-sel" style="width:100%;font-size:13px;padding:8px;border:1px solid #e0dfd8;border-radius:8px;margin-bottom:1rem;">${cats}</select>
     <div style="display:flex;gap:8px;">
       <button onclick="confirmQuickConvert(${id},'${to}')" style="flex:1;padding:8px;background:#2d5be3;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">העבר ✓</button>
-      <button onclick="this.closest('[style*=fixed]').remove()" style="flex:1;padding:8px;background:#f0efe9;color:#1a1a1a;border:1px solid #c8c7c0;border-radius:8px;font-size:13px;cursor:pointer;">ביטול</button>
+      <button onclick="closeTopOverlay()" style="flex:1;padding:8px;background:#f0efe9;color:#1a1a1a;border:1px solid #c8c7c0;border-radius:8px;font-size:13px;cursor:pointer;">ביטול</button>
     </div>
   </div>`;
   document.body.appendChild(div);
@@ -2544,8 +2824,6 @@ function confirmQuickConvert(id,to){
   }
   state.ideas=state.ideas.filter(i=>i.id!==id);
   save();renderIdeas();renderTasks(currentFilter);updateStats();
-}
-document.getElementById('idea-modal').classList.add('hidden');toast('רעיון נשמר ✓');
 }
 
 function scheduleIdeaReminders(){
@@ -2563,41 +2841,15 @@ function scheduleIdeaReminders(){
 }
 scheduleIdeaReminders();
 
-function quickConvertFromList(id,to){
-  // Show a small inline prompt for category
-  const cats=CATS.map(cat=>`<option value="${cat}">${cat}</option>`).join('');
-  const div=document.createElement('div');
-  div.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:400;display:flex;align-items:center;justify-content:center;';
-  div.innerHTML=`<div style="background:#fff;border-radius:12px;padding:1.25rem;width:320px;box-shadow:0 8px 32px rgba(0,0,0,0.2);">
-    <div style="font-size:15px;font-weight:700;margin-bottom:1rem;direction:rtl;">✅ העבר למשימה</div>
-    <div style="font-size:13px;color:var(--text2);margin-bottom:8px;direction:rtl;">בחר קטגוריה:</div>
-    <select id="inline-cat-sel" style="width:100%;font-size:13px;padding:8px;border:1px solid #e0dfd8;border-radius:8px;margin-bottom:1rem;">${cats}</select>
-    <div style="display:flex;gap:8px;">
-      <button onclick="confirmQuickConvert(${id},'${to}')" style="flex:1;padding:8px;background:#2d5be3;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">העבר ✓</button>
-      <button onclick="this.closest('[style*=fixed]').remove()" style="flex:1;padding:8px;background:#f0efe9;color:#1a1a1a;border:1px solid #c8c7c0;border-radius:8px;font-size:13px;cursor:pointer;">ביטול</button>
-    </div>
-  </div>`;
-  document.body.appendChild(div);
-}
-function confirmQuickConvert(id,to){
-  const sel=document.getElementById('inline-cat-sel');
-  const cat=sel?sel.value:'אישי';
-  // Remove the overlay
-  const overlay=sel?sel.closest('[style*=fixed]'):null;
-  if(overlay)overlay.remove();
-  const i=state.ideas.find(i=>i.id===id);if(!i)return;
-  if(to==='task'){
-    state.tasks.push({id:Date.now(),text:i.name,pri:'B',cat,link:i.link||'',done:false,createdAt:todayStr});
-    toast('הועבר למשימות ✓');
-  }
-  state.ideas=state.ideas.filter(i=>i.id!==id);
-  save();renderIdeas();renderTasks(currentFilter);updateStats();
-}
 
 function deleteIdea(){
   if(!confirm('למחוק?'))return;
+  const idea=state.ideas.find(i=>i.id===currentIdeaId);if(!idea)return;
+  const copy={...idea};
+  addToTrash('idea',copy,copy.name);
   state.ideas=state.ideas.filter(i=>i.id!==currentIdeaId);
-  save();renderIdeas();document.getElementById('idea-modal').classList.add('hidden');toast('נמחק');
+  pushUndo('מחיקת רעיון: '+copy.name,()=>{state.ideas.unshift(copy);state.trash=state.trash.filter(tr=>tr.item.id!==copy.id);save();renderIdeas();});
+  save();renderIdeas();document.getElementById('idea-modal').classList.add('hidden');toast('נמחק ✓ — Ctrl+Z או סל מחזור לשחזור');
 }
 
 function quickConvertIdea(id,to){
@@ -2637,17 +2889,17 @@ checkMorningReview();
 // ===== SEND TO COCKPIT =====
 function sendToCockpit(id){
   const t=state.tasks.find(t=>t.id===id);if(!t)return;
-  // Check if already in today's events
-  if(state.events.find(e=>e.date===todayStr&&e.name===t.text&&!e.archived)){
+  // Check if already in today's events (prevent duplicates)
+  if(state.events.find(e=>e.date===todayStr&&e.taskSourceId===id&&!e.archived)){
     toast('המשימה כבר ב"היום שלך" ✓');
     const btn=document.querySelector('.nav-btn[onclick*="morning"]');if(btn)showTab('morning',btn);return;
   }
   const taskCopy={...t};
-  // Add to today's events
-  state.events.push({id:Date.now(),name:t.text,date:todayStr,timeStart:'',timeEnd:'',type:'business',note:t.note||'',archived:false,completed:false,fromTask:true});
+  const evId=Date.now();
+  state.events.unshift({id:evId,name:t.text,date:todayStr,timeStart:'',timeEnd:'',type:'business',note:t.note||'',archived:false,completed:false,fromTask:true,taskSourceId:id,pri:t.pri,cat:t.cat});
   pushUndo('שליחה ל"היום שלך": '+t.text,()=>{
-    state.events=state.events.filter(e=>!(e.name===taskCopy.text&&e.date===todayStr&&e.fromTask));
-    state.tasks.push(taskCopy);
+    state.events=state.events.filter(e=>e.id!==evId);
+    state.tasks.unshift(taskCopy);
     save();renderTodayEvents();renderTasks(currentFilter);updateStats();
   });
   state.tasks=state.tasks.filter(t=>t.id!==id);
@@ -2726,17 +2978,15 @@ function closeMorningReview(){
 
 function cycleTaskPri(id){
   const t=state.tasks.find(t=>t.id===id);if(!t)return;
-  const order=['A','B','C','D','E'];
-  const idx=order.indexOf(t.pri);
-  t.pri=order[(idx+1)%order.length];
-  save();renderTasks(currentFilter);toast('עדיפות שונתה ל-'+t.pri);
+  const idx=PRI_ORDER.indexOf(t.pri);
+  t.pri=PRI_ORDER[(idx+1)%PRI_ORDER.length];
+  save();renderTasks(currentFilter);toast('עדיפות: '+t.pri);
 }
 function cycleBig3Pri(id){
   const t=state.big3.find(t=>t.id===id);if(!t)return;
-  const order=['A','B','C','D','E'];
-  const idx=order.indexOf(t.pri);
-  t.pri=order[(idx+1)%order.length];
-  save();renderBig3();toast('עדיפות שונתה ל-'+t.pri);
+  const idx=PRI_ORDER.indexOf(t.pri);
+  t.pri=PRI_ORDER[(idx+1)%PRI_ORDER.length];
+  save();renderBig3();toast('עדיפות: '+t.pri);
 }
 
 
@@ -2829,23 +3079,30 @@ async function loadFromFirebase(){
     if(!state.ideas)state.ideas=[];
     if(!state.ideaCats)state.ideaCats=[];
     if(!state.dailyNotes)state.dailyNotes={};
+    if(!state.trash)state.trash=[];
     // Re-render everything
     renderBig3();renderTodayEvents();renderMorningAlerts();renderDailyNotes();updateStats();
   }
 }
 
+let fbListenTimeout=null;
 function listenFirebase(){
   if(!fbDb)return;
   fbDb.ref('users/'+fbUserId+'/state').on('value',(snap)=>{
     const data=snap.val();
     if(!data)return;
-    state={...state,...data};
-    state.recurring=(state.recurring||[]).map(r=>({timeStart:'',timeEnd:'',doneToday:{},...r}));
-    state.events=(state.events||[]).map(e=>({timeEnd:'',archived:false,completed:false,...e}));
-    if(!state.ideas)state.ideas=[];
-    if(!state.ideaCats)state.ideaCats=[];
-    if(!state.dailyNotes)state.dailyNotes={};
-    renderBig3();renderTodayEvents();updateStats();
+    // Debounce to prevent render loops
+    clearTimeout(fbListenTimeout);
+    fbListenTimeout=setTimeout(()=>{
+      state={...state,...data};
+      state.recurring=(state.recurring||[]).map(r=>({timeStart:'',timeEnd:'',doneToday:{},...r}));
+      state.events=(state.events||[]).map(e=>({timeEnd:'',archived:false,completed:false,...e}));
+      if(!state.ideas)state.ideas=[];
+      if(!state.ideaCats)state.ideaCats=[];
+      if(!state.dailyNotes)state.dailyNotes={};
+      if(!state.trash)state.trash=[];
+      renderBig3();renderTodayEvents();updateStats();
+    },1000);
   });
 }
 
@@ -2890,15 +3147,531 @@ function applySyncCode(){
   loadFromFirebase().then(()=>toast('סונכרן בהצלחה! 🎉'));
 }
 
+
+
+// ===== PRIORITY HELPERS =====
+function priLabel(p){
+  if(!p)return'?';
+  return p; // Keep English: A1,A2,B1,B2,C,D,E
+}
+function priBase(p){if(!p)return'C';if(p==='A'||p==='A1'||p==='A2'||p==='A3'||p==='A4'||p==='A5')return'A';if(p==='B'||p==='B1'||p==='B2'||p==='B3'||p==='B4'||p==='B5')return'B';return p[0];}
+function priBadgeClass(p){const b=priBase(p);return'badge-'+b;}
+
+let activePriMenu=null;
+function openPriMenu(el,id,type){
+  closePriMenu();
+  const menu=document.createElement('div');
+  menu.className='pri-menu open';
+  menu.style.cssText='position:fixed;z-index:9999;';
+  const rect=el.getBoundingClientRect();
+  menu.style.top=(rect.bottom+4)+'px';
+  menu.style.right=(window.innerWidth-rect.right)+'px';
+  
+  const rows=[
+    ['A1','A2','A3','A4','A5'],
+    ['B1','B2','B3','B4','B5'],
+    ['C','D','E']
+  ];
+  rows.forEach(row=>{
+    const div=document.createElement('div');div.className='pri-menu-row';
+    row.forEach(p=>{
+      const b=document.createElement('button');
+      b.className='pri-btn p'+p[0];
+      b.textContent=priLabel(p);
+      b.onclick=(e)=>{e.stopPropagation();setPriority(id,type,p);closePriMenu();};
+      div.appendChild(b);
+    });
+    menu.appendChild(div);
+  });
+  document.body.appendChild(menu);
+  activePriMenu=menu;
+  setTimeout(()=>document.addEventListener('click',closePriMenu,{once:true}),10);
+}
+function closePriMenu(){if(activePriMenu){activePriMenu.remove();activePriMenu=null;}}
+function setPriority(id,type,p){
+  if(type==='task'){const t=state.tasks.find(t=>t.id===id);if(t){t.pri=p;save();renderTasks(currentFilter);toast('עדיפות: '+priLabel(p));}}
+  else if(type==='big3'){const t=state.big3.find(t=>t.id===id);if(t){t.pri=p;save();renderBig3();toast('עדיפות: '+priLabel(p));}}
+}
+
+// ===== PROGRESS BAR =====
+function updateProgressBar(){
+  const total=state.big3.length;
+  const done=state.big3.filter(t=>t.done).length;
+  const fill=document.getElementById('progress-fill');
+  const label=document.getElementById('progress-label');
+  if(!fill||!label)return;
+  const pct=total?Math.round(done/total*100):0;
+  fill.style.width=pct+'%';
+  label.textContent=done+' / '+total+' משימות';
+}
+
+// ===== ADD TASK TO TODAY =====
+let rescheduleTarget=null;
+function openAddTaskToToday(){
+  document.getElementById('at-text').value='';
+  document.getElementById('at-time').value='';
+  document.getElementById('at-end').value='';
+  document.getElementById('at-type').value='task';
+  document.getElementById('at-pri').value='A1';
+  document.getElementById('at-cat').value='אישי';
+  document.getElementById('add-today-modal').classList.remove('hidden');
+  setTimeout(()=>document.getElementById('at-text').focus(),100);
+}
+function closeAddTodayModal(e){if(!e||e.target===document.getElementById('add-today-modal'))document.getElementById('add-today-modal').classList.add('hidden');}
+function saveAddTaskToToday(){
+  const text=document.getElementById('at-text').value.trim();if(!text){toast('הכנס טקסט');return;}
+  const type=document.getElementById('at-type').value;
+  const time=document.getElementById('at-time').value;
+  const end=document.getElementById('at-end').value;
+  const pri=document.getElementById('at-pri').value;
+  const cat=document.getElementById('at-cat').value;
+  if(type==='task'){
+    state.events.unshift({id:Date.now(),name:text,date:todayStr,timeStart:time,timeEnd:end,type:'personal',note:'',archived:false,completed:false,fromTask:true,pri,cat});
+  } else {
+    state.events.unshift({id:Date.now(),name:text,date:todayStr,timeStart:time,timeEnd:end,type:'business',note:'',archived:false,completed:false});
+  }
+  save();renderTodayEvents();updateStats();
+  document.getElementById('add-today-modal').classList.add('hidden');
+  toast('נוסף ל"היום שלך" ✓');
+}
+
+// ===== RESCHEDULE FROM TODAY =====
+function openReschedule(eventId, name, cat){
+  rescheduleTarget=eventId;
+  document.getElementById('reschedule-task-name').textContent=name;
+  document.getElementById('reschedule-date').value=todayStr;
+  document.getElementById('reschedule-time').value='';
+  if(cat&&cat!=='אישי')document.getElementById('reschedule-cat').value=cat;
+  document.getElementById('reschedule-modal').classList.remove('hidden');
+}
+function closeRescheduleModal(e){if(!e||e.target===document.getElementById('reschedule-modal'))document.getElementById('reschedule-modal').classList.add('hidden');}
+function saveReschedule(){
+  const date=document.getElementById('reschedule-date').value;if(!date){toast('בחר תאריך');return;}
+  const time=document.getElementById('reschedule-time').value;
+  const cat=document.getElementById('reschedule-cat').value;
+  const e=state.events.find(e=>e.id===rescheduleTarget);
+  if(e){
+    // move to tasks if same day or future
+    const taskText=e.name;
+    state.tasks.unshift({id:Date.now(),text:taskText,pri:e.pri||'B1',cat,link:'',done:false,createdAt:todayStr,scheduledDate:date,scheduledTime:time});
+    e.archived=true;
+  }
+  save();renderTodayEvents();renderTasks(currentFilter);updateStats();
+  document.getElementById('reschedule-modal').classList.add('hidden');
+  toast('תוזמן מחדש ✓');
+}
+
+// ===== RECURRING TIME OVERRIDE =====
+let recTimeTargetId=null;
+function openRecTimeModal(recId, name){
+  recTimeTargetId=recId;
+  const r=state.recurring.find(r=>r.id===recId);
+  document.getElementById('rec-time-task-name').textContent=name;
+  document.getElementById('rec-time-start').value=(r&&r.todayTimeOverride&&r.todayTimeOverride[todayStr]&&r.todayTimeOverride[todayStr].start)||r&&r.timeStart||'';
+  document.getElementById('rec-time-end').value=(r&&r.todayTimeOverride&&r.todayTimeOverride[todayStr]&&r.todayTimeOverride[todayStr].end)||r&&r.timeEnd||'';
+  document.getElementById('rec-time-modal').classList.remove('hidden');
+}
+function closeRecTimeModal(e){if(!e||e.target===document.getElementById('rec-time-modal'))document.getElementById('rec-time-modal').classList.add('hidden');}
+function saveRecTimeOverride(){
+  const r=state.recurring.find(r=>r.id===recTimeTargetId);if(!r)return;
+  if(!r.todayTimeOverride)r.todayTimeOverride={};
+  r.todayTimeOverride[todayStr]={start:document.getElementById('rec-time-start').value,end:document.getElementById('rec-time-end').value};
+  save();renderTodayEvents();document.getElementById('rec-time-modal').classList.add('hidden');toast('שעה עודכנה ליום זה ✓');
+}
+
+// ===== PLAN NEXT WEEK =====
+function openPlanNextWeek(){
+  const grid=document.getElementById('plan-next-week-grid');
+  const base=new Date(now);
+  // Go to start of next week
+  const daysUntilNextSun=7-now.getDay();
+  base.setDate(now.getDate()+daysUntilNextSun);
+  const days=Array.from({length:7},(_,i)=>{const d=new Date(base);d.setDate(base.getDate()+i);return d;});
+  grid.innerHTML=days.map(d=>{
+    const dStr=d.toISOString().split('T')[0];
+    const dayEvs=state.events.filter(e=>e.date===dStr&&!e.archived&&!e.completed);
+    const dayRecs=getRecurringForDay(d.getDay());
+    let html='<div style="border:1px solid var(--border);border-radius:10px;padding:12px;">';
+    html+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">';
+    html+='<div style="font-weight:700;font-size:14px;">'+DAYS[d.getDay()]+' '+d.getDate()+' '+MONTHS_SHORT[d.getMonth()]+'</div>';
+    html+='<button class="btn btn-xs btn-primary" onclick="quickAddToDay(\"'+dStr+'\")">+ הוסף</button>';
+    html+='</div>';
+    dayRecs.forEach(r=>{html+='<div style="font-size:12px;padding:3px 8px;background:#d5f5e3;color:#1e8449;border-radius:6px;margin-bottom:3px;">🔄 '+r.name+(r.timeStart?' · '+r.timeStart:'')+'</div>';});
+    dayEvs.forEach(e=>{const et=evType(e.type);html+='<div style="font-size:12px;padding:3px 8px;background:'+et.bg+';color:'+et.color+';border-radius:6px;margin-bottom:3px;">'+et.icon+' '+e.name+(e.timeStart?' · '+e.timeStart:'')+'</div>';});
+    if(!dayEvs.length&&!dayRecs.length)html+='<div style="font-size:12px;color:var(--text3);">אין תכנון עדיין</div>';
+    html+='</div>';
+    return html;
+  }).join('');
+  document.getElementById('plan-next-week-modal').classList.remove('hidden');
+}
+function closePlanNextWeek(e){if(!e||e.target===document.getElementById('plan-next-week-modal'))document.getElementById('plan-next-week-modal').classList.add('hidden');}
+
+// ===== NEXT WEEK SCHEDULE VIEW =====
+function renderScheduleNextWeek(el){
+  const base=new Date(now);
+  const daysUntilNextSun=7-now.getDay();
+  base.setDate(now.getDate()+daysUntilNextSun);
+  const days=Array.from({length:7},(_,i)=>{const d=new Date(base);d.setDate(base.getDate()+i);return d;});
+  let html='<div class="card" style="margin-bottom:0;"><div class="card-title" style="margin-bottom:0.75rem;">👁️ לוז שבוע הבא</div>';
+  days.forEach(d=>{
+    const dStr=d.toISOString().split('T')[0];
+    const evs=state.events.filter(e=>e.date===dStr&&!e.archived&&!e.completed);
+    const recs=getRecurringForDay(d.getDay());
+    const total=evs.length+recs.length;
+    html+='<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);">';
+    html+='<div style="min-width:80px;"><div style="font-size:12px;font-weight:700;color:var(--text2);">'+DAYS[d.getDay()]+'</div><div style="font-size:11px;color:var(--text3);">'+d.getDate()+' '+MONTHS_SHORT[d.getMonth()]+'</div></div>';
+    html+='<div style="flex:1;display:flex;flex-wrap:wrap;gap:4px;">';
+    recs.forEach(r=>{html+='<span style="font-size:11px;padding:2px 7px;border-radius:6px;background:#d5f5e3;color:#1e8449;">🔄 '+r.name.substring(0,15)+(r.name.length>15?'...':'')+'</span>';});
+    evs.forEach(e=>{const et=evType(e.type);html+='<span style="font-size:11px;padding:2px 7px;border-radius:6px;background:'+et.bg+';color:'+et.color+';">'+et.icon+' '+e.name.substring(0,15)+(e.name.length>15?'...':'')+'</span>';});
+    if(!total)html+='<span style="font-size:11px;color:var(--text3);">פנוי</span>';
+    html+='</div>';
+    html+='<button class="btn btn-xs" data-date="'+dStr+'" onclick="closePlanNextWeek();openNewEventModal(this.dataset.date,\'\')">+</button>';
+    html+='</div>';
+  });
+  html+='</div>';
+  el.innerHTML=html;
+}
+// ===== MONTH CALENDAR =====
+let monthYear=now.getFullYear(), monthMonth=now.getMonth();
+function setCalView(v){
+  calView=v;
+  document.getElementById('view-week-btn').classList.toggle('active',v==='week');
+  document.getElementById('view-day-btn').classList.toggle('active',v==='day');
+  document.getElementById('view-month-btn').classList.toggle('active',v==='month');
+  renderCalendar();
+}
+function renderMonthCal(c){
+  const y=monthYear, m=monthMonth;
+  const firstDay=new Date(y,m,1).getDay();
+  const daysInMonth=new Date(y,m+1,0).getDate();
+  const daysInPrev=new Date(y,m,0).getDate();
+  
+  // Month jump bar
+  let jumpHtml='<div class="month-jump">';
+  MONTHS.forEach((mn,i)=>{
+    jumpHtml+='<button class="month-jump-btn'+(i===m?' active':'')+'" onclick="monthYear='+y+';monthMonth='+i+';renderCalendar()">'+MONTHS_SHORT[i]+'</button>';
+  });
+  jumpHtml+='</div>';
+  
+  // Day headers (RTL: שבת to ראשון)
+  const dayHeaders=['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
+  let html='<div style="margin-bottom:1rem;">'+
+    '<div class="month-nav">'+
+    '<button class="cal-nav-btn" onclick="monthYear=monthMonth===0?monthYear-1:monthYear;monthMonth=monthMonth===0?11:monthMonth-1;renderCalendar()">›</button>'+
+    '<div style="flex:1;text-align:center;font-size:16px;font-weight:700;">'+MONTHS[m]+' '+y+'</div>'+
+    '<button class="cal-nav-btn" onclick="monthMonth=monthMonth===11?0:monthMonth+1;if(monthMonth===0)monthYear++;renderCalendar()">‹</button>'+
+    '<button class="btn btn-sm" onclick="monthYear=now.getFullYear();monthMonth=now.getMonth();renderCalendar()">היום</button>'+
+    '</div>'+jumpHtml+
+    '<div class="month-grid">'+
+    dayHeaders.map(d=>'<div style="text-align:center;font-size:11px;font-weight:700;color:var(--text3);padding:4px 0;">'+d+'</div>').join('');
+  
+  // Cells
+  let cells=[];
+  // prev month days
+  for(let i=firstDay-1;i>=0;i--){
+    cells.push({day:daysInPrev-i,month:'prev'});
+  }
+  // current month
+  for(let i=1;i<=daysInMonth;i++){
+    cells.push({day:i,month:'current'});
+  }
+  // next month
+  const remaining=(7-cells.length%7)%7;
+  for(let i=1;i<=remaining;i++){
+    cells.push({day:i,month:'next'});
+  }
+  
+  cells.forEach(cell=>{
+    const dStr=y+'-'+String(m+1).padStart(2,'0')+'-'+String(cell.day).padStart(2,'0');
+    const isToday=cell.month==='current'&&dStr===todayStr;
+    const evs=cell.month==='current'?getCalEventsForDate(dStr):[];
+    html+='<div class="month-cell'+(isToday?' is-today':'')+(cell.month!=='current'?' other-month':'')+'"'+
+      (cell.month==='current'?' data-date="'+dStr+'" onclick="monthCellClick(this.dataset.date)"':'')+">";
+    html+='<div class="month-day-num" style="color:'+(isToday?'var(--accent)':'var(--text)')+'">'+(cell.month!=='current'?'<span style="opacity:0.4;">'+cell.day+'</span>':cell.day)+'</div>';
+    evs.slice(0,3).forEach(e=>{
+      const color=e.isRec?(CAT_COLORS[e.cat]||'#888'):evType(e.type).color;
+      const bg=e.isRec?(CAT_COLORS[e.cat]||'#888')+'22':evType(e.type).bg;
+      html+='<div class="month-ev" style="background:'+bg+';color:'+color+';">'+(e.timeStart?e.timeStart+' ':'')+e.name+'</div>';
+    });
+    if(evs.length>3)html+='<div style="font-size:10px;color:var(--text3);">+ '+(evs.length-3)+' נוספים</div>';
+    html+='</div>';
+  });
+  
+  html+='</div></div>';
+  c.innerHTML=html;
+}
+function monthCellClick(dStr){
+  // Switch to day view for that date
+  const d=new Date(dStr+'T12:00:00');
+  calOffset=Math.round((d-now)/(1000*60*60*24));
+  setCalView('day');
+}
+
+// ===== PROJECT LINK PICKER =====
+let projLinkTaskId=null, projLinkType=null;
+function openProjLinkModal(id, type){
+  projLinkTaskId=id; projLinkType=type;
+  const el=document.getElementById('proj-link-list');
+  if(!state.projects.length){el.innerHTML='<div class="empty">אין פרויקטים</div>';document.getElementById('proj-link-modal').classList.remove('hidden');return;}
+  el.innerHTML=state.projects.map(p=>`
+    <div style="display:flex;align-items:center;gap:10px;padding:10px;border-bottom:1px solid var(--border);cursor:pointer;" onclick="linkTaskToProject(${p.id})">
+      <div style="width:32px;height:32px;border-radius:8px;background:${CAT_COLORS[p.cat]}22;display:flex;align-items:center;justify-content:center;">${CAT_ICONS[p.cat]||'📁'}</div>
+      <div><div style="font-size:14px;font-weight:600;">${p.name}</div><div style="font-size:11px;color:var(--text3);">${p.cat}</div></div>
+    </div>`).join('');
+  document.getElementById('proj-link-modal').classList.remove('hidden');
+}
+function closeProjLinkModal(e){if(!e||e.target===document.getElementById('proj-link-modal'))document.getElementById('proj-link-modal').classList.add('hidden');}
+function linkTaskToProject(projId){
+  const p=state.projects.find(p=>p.id===projId);if(!p)return;
+  if(projLinkType==='task'){
+    const t=state.tasks.find(t=>t.id===projLinkTaskId);
+    if(t){t.projectId=projId;t.projectName=p.name;save();renderTasks(currentFilter);toast('שויך ל"'+p.name+'" ✓');}
+  } else if(projLinkType==='big3'){
+    const t=state.big3.find(t=>t.id===projLinkTaskId);
+    if(t){t.projectId=projId;t.projectName=p.name;save();renderBig3();toast('שויך ל"'+p.name+'" ✓');}
+  }
+  document.getElementById('proj-link-modal').classList.add('hidden');
+}
+
+// ===== FOCUS MODE =====
+let focusTaskId=null, focusTimerInterval=null, focusSeconds=0, focusRunning=false;
+function openFocusMode(id, type){
+  const t=type==='big3'?state.big3.find(t=>t.id===id):state.tasks.find(t=>t.id===id);
+  if(!t)return;
+  focusTaskId={id,type};focusSeconds=0;focusRunning=false;
+  document.getElementById('focus-task-name').textContent=t.text;
+  document.getElementById('focus-cat').textContent=(CAT_ICONS[t.cat]||'')+'  '+t.cat;
+  const pb=document.getElementById('focus-pri');
+  pb.textContent=priLabel(t.pri||'A1');
+  pb.className='focus-pri badge badge-'+(priBase(t.pri||'A'));
+  document.getElementById('focus-timer-display').textContent='00:00:00';
+  document.getElementById('focus-start-btn').disabled=false;
+  document.getElementById('focus-pause-btn').disabled=true;
+  document.getElementById('focus-overlay').classList.remove('hidden');
+}
+function closeFocusMode(){
+  clearInterval(focusTimerInterval);focusRunning=false;
+  document.getElementById('focus-overlay').classList.add('hidden');
+}
+function focusTimerStart(){
+  if(focusRunning)return;focusRunning=true;
+  document.getElementById('focus-start-btn').disabled=true;
+  document.getElementById('focus-pause-btn').disabled=false;
+  focusTimerInterval=setInterval(()=>{
+    focusSeconds++;
+    const h=Math.floor(focusSeconds/3600),m=Math.floor((focusSeconds%3600)/60),s=focusSeconds%60;
+    document.getElementById('focus-timer-display').textContent=String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+  },1000);
+}
+function focusTimerPause(){
+  clearInterval(focusTimerInterval);focusRunning=false;
+  document.getElementById('focus-start-btn').disabled=false;
+  document.getElementById('focus-pause-btn').disabled=true;
+  // save elapsed
+  if(focusTaskId){
+    const arr=focusTaskId.type==='big3'?state.big3:state.tasks;
+    const t=arr.find(t=>t.id===focusTaskId.id);
+    if(t){t.elapsed=(t.elapsed||0)+focusSeconds;focusSeconds=0;save();}
+  }
+}
+function focusMarkDone(){
+  focusTimerPause();
+  if(focusTaskId){
+    if(focusTaskId.type==='big3'){toggleBig3WithUndo(focusTaskId.id);}
+    else{toggleTaskWithUndo(focusTaskId.id);}
+  }
+  closeFocusMode();toast('כל הכבוד! ✓ 🎉');
+}
+
+// ===== CAPTURE TO PROJECT =====
+function convertCaptureToProject(id){
+  const cap=state.capture.find(c=>c.id===id);if(!cap)return;
+  // Show project picker inline
+  const cats=CATS.map(cat=>'<option value="'+cat+'">'+cat+'</option>').join('');
+  const div=document.createElement('div');
+  div.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:400;display:flex;align-items:center;justify-content:center;';
+  div.innerHTML='<div style="background:var(--bg2);border-radius:12px;padding:1.25rem;width:340px;box-shadow:0 8px 32px rgba(0,0,0,0.2);">'+
+    '<div style="font-size:15px;font-weight:700;margin-bottom:1rem;direction:rtl;">📁 הוסף לפרויקט</div>'+
+    '<div style="font-size:13px;margin-bottom:8px;direction:rtl;">צור פרויקט חדש מהלכידה:</div>'+
+    '<select id="cp-cat" style="width:100%;font-size:13px;padding:8px;border:1px solid var(--border);border-radius:8px;margin-bottom:1rem;">'+cats+'</select>'+
+    '<div style="display:flex;gap:8px;">'+
+    '<button onclick="confirmCaptureToProject('+id+')" style="flex:1;padding:8px;background:#2d5be3;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">צור ✓</button>'+
+    '<button onclick="closeTopOverlay()" style="flex:1;padding:8px;background:var(--bg3);color:var(--text);border:1px solid var(--border);border-radius:8px;font-size:13px;cursor:pointer;">ביטול</button>'+
+    '</div></div>';
+  document.body.appendChild(div);
+}
+function confirmCaptureToProject(id){
+  const sel=document.getElementById('cp-cat');
+  const cat=sel?sel.value:'אישי';
+  const overlay=sel?sel.closest('[style*=fixed]'):null;
+  if(overlay)overlay.remove();
+  const cap=state.capture.find(c=>c.id===id);if(!cap)return;
+  state.projects.unshift({id:Date.now(),name:cap.text,cat,steps:[],links:[],notes:'',continueStep:null});
+  state.capture=state.capture.filter(c=>c.id!==id);
+  save();renderCapture();renderProjects();updateStats();toast('פרויקט נוצר ✓');
+}
+
+// ===== UPDATE FUNCTIONS TO USE NEW ORDERING (newest first) =====
+// Wrapper: all new items unshift instead of push
+// (Already handled by using unshift in addCapture, addTask, addEvent etc below)
+
+
+
+function formatDateIL(dateStr){
+  if(!dateStr)return'';
+  const parts=dateStr.split('-');
+  if(parts.length!==3)return dateStr;
+  return parts[2]+'/'+parts[1]+'/'+parts[0];
+}
+
+
+function removeTodayItem(id){
+  if(typeof id === 'string' && id.startsWith('rec_')){
+    const recId=parseInt(id.replace('rec_',''));
+    const r=state.recurring.find(r=>r.id===recId);
+    if(r){
+      if(!r.skipDays)r.skipDays={};
+      r.skipDays[todayStr]=true;
+      pushUndo('הסרת חוזרת: '+r.name,()=>{
+        delete r.skipDays[todayStr];
+        save();renderTodayEvents();updateStats();
+      });
+      save();renderTodayEvents();updateStats();
+      toast('הוסר מהיום ✓ — Ctrl+Z לביטול');
+    }
+  } else {
+    const eid=typeof id==='string'?parseInt(id):id;
+    const e=state.events.find(e=>e.id===eid);
+    if(e){
+      const prevArchived=e.archived;
+      addToTrash('event',{...e},e.name);
+      e.archived=true;
+      pushUndo('מחיקת פריט: '+e.name,()=>{
+        e.archived=prevArchived;
+        state.trash=state.trash.filter(tr=>tr.item.id!==e.id);
+        save();renderTodayEvents();updateStats();
+      });
+      save();renderTodayEvents();updateStats();
+      toast('נמחק ✓ — Ctrl+Z או סל מחזור לשחזור');
+    }
+  }
+}
+
+function populateTaskProjSelect(){
+  const sel=document.getElementById('task-proj');if(!sel)return;
+  sel.innerHTML='<option value="">📁 ללא פרויקט</option>'+
+    state.projects.map(p=>'<option value="'+p.id+'">'+CAT_ICONS[p.cat]+' '+p.name+'</option>').join('');
+}
+
+
+function closeTopOverlay(){const els=document.querySelectorAll('[style*="position:fixed"][style*="z-index:400"]');if(els.length)els[els.length-1].remove();}
+
+// ===== סל מחזור (TRASH) =====
+const TRASH_DAYS = 30;
+
+function addToTrash(type, item, name){
+  if(!state.trash)state.trash=[];
+  state.trash.unshift({
+    id: Date.now(),
+    type, // 'task','event','project','idea','capture','recurring','note'
+    item: JSON.parse(JSON.stringify(item)), // deep copy
+    name: name || item.name || item.text || '?',
+    deletedAt: new Date().toISOString()
+  });
+  // Keep only 30 days
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - TRASH_DAYS);
+  state.trash = state.trash.filter(t => new Date(t.deletedAt) > cutoff);
+}
+
+function restoreFromTrash(trashId){
+  if(!state.trash)return;
+  const entry = state.trash.find(t=>t.id===trashId);
+  if(!entry)return;
+  const item = entry.item;
+  if(entry.type==='task'){
+    state.tasks.unshift({...item, done:false});
+    toast('משימה שוחזרה ✓');
+  } else if(entry.type==='event'){
+    state.events.unshift({...item, archived:false, completed:false});
+    toast('אירוע שוחזר ✓');
+  } else if(entry.type==='project'){
+    state.projects.unshift({...item});
+    toast('פרויקט שוחזר ✓');
+  } else if(entry.type==='idea'){
+    state.ideas.unshift({...item});
+    toast('רעיון שוחזר ✓');
+  } else if(entry.type==='capture'){
+    state.capture.unshift({...item});
+    toast('פריט שוחזר ✓');
+  } else if(entry.type==='recurring'){
+    state.recurring.unshift({...item});
+    toast('משימה חוזרת שוחזרה ✓');
+  } else if(entry.type==='note'){
+    if(!state.dailyNotes)state.dailyNotes={};
+    const dateKey=item.dateKey||todayStr;
+    if(!state.dailyNotes[dateKey])state.dailyNotes[dateKey]=[];
+    state.dailyNotes[dateKey].unshift({id:Date.now(),text:item.text});
+    toast('הערה שוחזרה ✓');
+  }
+  state.trash = state.trash.filter(t=>t.id!==trashId);
+  save();
+  renderBig3();renderTodayEvents();renderTasks(currentFilter);
+  renderEvents(currentEventFilter);renderProjects();renderIdeas();
+  renderDailyNotes();updateStats();
+  renderTrash();
+}
+
+function permDeleteFromTrash(trashId){
+  if(!confirm('למחוק לצמיתות?'))return;
+  state.trash = state.trash.filter(t=>t.id!==trashId);
+  save();renderTrash();toast('נמחק לצמיתות');
+}
+
+function clearTrash(){
+  if(!confirm('לרוקן את סל המחזור לצמיתות?'))return;
+  state.trash=[];
+  save();renderTrash();toast('סל המחזור רוקן ✓');
+}
+
+function renderTrash(){
+  const el=document.getElementById('trash-list');
+  if(!el)return;
+  if(!state.trash)state.trash=[];
+  document.getElementById('trash-count').textContent=state.trash.length+' פריטים';
+  if(!state.trash.length){
+    el.innerHTML='<div class="empty">סל המחזור ריק ✓</div>';
+    return;
+  }
+  const typeLabels={task:'✅ משימה',event:'📅 אירוע',project:'📁 פרויקט',
+    idea:'💡 רעיון',capture:'📥 לכידה',recurring:'🔄 חוזרת',note:'📝 הערה'};
+  el.innerHTML=state.trash.map(t=>{
+    const d=new Date(t.deletedAt);
+    const dateStr=d.getDate()+'/'+(d.getMonth()+1)+'/'+d.getFullYear();
+    const timeStr=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+    const daysLeft=TRASH_DAYS-Math.floor((Date.now()-d.getTime())/(1000*60*60*24));
+    return '<div style="display:flex;align-items:center;gap:10px;padding:12px;border:1px solid var(--border);border-radius:10px;margin-bottom:8px;background:var(--bg2);">'+
+      '<div style="font-size:20px;">'+(typeLabels[t.type]||'🗑️')+'</div>'+
+      '<div style="flex:1;">'+
+        '<div style="font-size:14px;font-weight:600;">'+t.name+'</div>'+
+        '<div style="font-size:11px;color:var(--text3);">נמחק: '+dateStr+' '+timeStr+' · נשאר: '+daysLeft+' ימים</div>'+
+      '</div>'+
+      '<button class="btn btn-primary btn-sm" onclick="restoreFromTrash('+t.id+')">↩ שחזר</button>'+
+      '<button class="btn btn-danger btn-sm" onclick="permDeleteFromTrash('+t.id+')">🗑️</button>'+
+    '</div>';
+  }).join('');
+}
+
 // ===== KEYBOARD HANDLER (must be last, after all functions) =====
 document.addEventListener('keydown',function(e){
   // Ctrl+Z / Cmd+Z — undo (only when NOT in a text input/textarea)
   if((e.ctrlKey||e.metaKey)&&e.key==='z'&&!e.shiftKey){
-    if(undoStack.length>0){
-      e.preventDefault();
-      performUndo();
-      return;
-    }
+    // Don't intercept if typing in input/textarea
+    const tag=(e.target||{}).tagName;
+    if(tag==='INPUT'||tag==='TEXTAREA')return;
+    e.preventDefault();
+    performUndo();
+    return;
   }
   // Escape — close modals
   if(e.key==='Escape'){
