@@ -390,6 +390,10 @@ body{font-family:'Segoe UI','Arial Hebrew',Arial,sans-serif;background:var(--bg)
     <div class="card-title">➕ אירוע חדש</div>
     <input type="text" id="ev-name" class="inp" placeholder="שם האירוע" />
     <div class="modal-row"><input type="date" id="ev-date" /><input type="time" id="ev-start" placeholder="משעה" /><input type="time" id="ev-end" placeholder="עד שעה" /></div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
+      <label style="font-size:12px;color:var(--text2);white-space:nowrap;">תאריך סיום (אירוע רב-יומי):</label>
+      <input type="date" id="ev-end-date" style="font-size:13px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);flex:1;" />
+    </div>
     <div class="modal-row"><select id="ev-type"><option value="business">💼 עסקי</option><option value="couple">❤️ זוגי</option><option value="medical">🏥 רפואי</option><option value="personal">👤 אישי</option><option value="zoom">💻 זום</option><option value="social">🎉 חברתי</option><option value="other">📌 שונות</option></select></div>
     <input type="text" id="ev-note" class="inp" placeholder="הערה" />
     <div style="display:flex;gap:8px;"><button class="btn btn-primary" onclick="addEvent()" style="flex:1;">+ הוסף</button><button class="btn" onclick="exportICS()" style="flex:1;">📤 ייצוא ICS</button></div>
@@ -771,6 +775,10 @@ body{font-family:'Segoe UI','Arial Hebrew',Arial,sans-serif;background:var(--bg)
       </select>
     </div>
     <div class="modal-row"><input type="date" id="em-date" /><input type="time" id="em-start" /><input type="time" id="em-end" /></div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
+      <label style="font-size:12px;color:var(--text2);white-space:nowrap;">תאריך סיום (רב-יומי):</label>
+      <input type="date" id="em-end-date" style="font-size:13px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);flex:1;" />
+    </div>
     <select id="em-type" class="inp"><option value="business">💼 עסקי</option><option value="couple">❤️ זוגי</option><option value="medical">🏥 רפואי</option><option value="personal">👤 אישי</option><option value="zoom">💻 זום</option><option value="social">🎉 חברתי</option><option value="other">📌 שונות</option></select>
     <input type="text" id="em-note" class="inp" placeholder="הערה" />
     <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text2);margin-bottom:10px;cursor:pointer;"><input type="checkbox" id="em-add-task" /> הוסף גם כמשימה</label>
@@ -1385,7 +1393,7 @@ function renderTodayEvents(){
 
     const nameEl=document.createElement('span');
     nameEl.style.cssText=`flex:1;font-size:13px;${e.completed?'text-decoration:line-through;color:var(--text3);':''}`;
-    nameEl.textContent=e.name+(e.timeEnd?' — '+e.timeEnd:'')+(e.projectId?' 📁':'');
+    nameEl.textContent=e.name+(e.timeEnd?' — '+e.timeEnd:'')+(e.dateEnd?' עד '+e.dateEnd.split('-').reverse().join('/'):'')+(e.projectId?' 📁':'');
     row.appendChild(nameEl);
 
     const typeLabel=document.createElement('span');
@@ -1668,8 +1676,9 @@ function saveStepAsEvent(){if(!currentStepInfo)return;const date=document.getEle
 // EVENTS
 function addEvent(){
   const name=document.getElementById('ev-name').value.trim();const date=document.getElementById('ev-date').value;if(!name||!date){toast('שם ותאריך חובה');return;}
-  state.events.unshift({id:Date.now(),name,date,timeStart:document.getElementById('ev-start').value,timeEnd:document.getElementById('ev-end').value,type:document.getElementById('ev-type').value,note:document.getElementById('ev-note').value.trim(),archived:false,completed:false});
-  document.getElementById('ev-name').value='';document.getElementById('ev-note').value='';document.getElementById('ev-start').value='';document.getElementById('ev-end').value='';document.getElementById('ev-date').value=todayStr;
+  const evEndDate=document.getElementById('ev-end-date').value;
+  state.events.unshift({id:Date.now(),name,date,dateEnd:evEndDate||undefined,timeStart:document.getElementById('ev-start').value,timeEnd:document.getElementById('ev-end').value,type:document.getElementById('ev-type').value,note:document.getElementById('ev-note').value.trim(),archived:false,completed:false});
+  document.getElementById('ev-name').value='';document.getElementById('ev-end-date').value='';document.getElementById('ev-note').value='';document.getElementById('ev-start').value='';document.getElementById('ev-end').value='';document.getElementById('ev-date').value=todayStr;
   save();renderEvents(currentEventFilter);updateStats();renderTodayEvents();toast('אירוע נוסף ✓');
   if(!document.getElementById('tab-calendar').classList.contains('hidden'))renderCalendar();
 }
@@ -1697,7 +1706,7 @@ function renderEvents(filter){
       <div style="font-size:18px;">${et.icon}</div>
       <div class="event-info">
         <div class="event-name">${e.name}</div>
-        <div class="event-meta">${e.timeStart?e.timeStart+(e.timeEnd?' — '+e.timeEnd:''):''} <span class="ev-label" style="background:${et.bg};color:${et.color}">${et.label}</span></div>
+        <div class="event-meta">${e.timeStart?e.timeStart+(e.timeEnd?' — '+e.timeEnd:''):''} ${e.dateEnd?'<span style="font-size:10px;background:#e8f0ff;color:#1a5276;padding:1px 6px;border-radius:4px;margin-left:4px;">📅 עד '+e.dateEnd.split('-').reverse().join('/')+'</span>':''} <span class="ev-label" style="background:${et.bg};color:${et.color}">${et.label}</span></div>
         ${e.note?`<div style="font-size:12px;color:var(--text3);margin-top:3px;">${e.note}</div>`:''}
       </div>
       <button class="btn-done" onclick="markEventDone(${e.id})">✅ הושלם</button>
@@ -1757,7 +1766,7 @@ function openNewEventModal(date,startTime){
   editingEventId=null;
   document.getElementById('em-title').textContent='📅 אירוע חדש';
   document.getElementById('em-name').value='';document.getElementById('em-date').value=date||todayStr;
-  document.getElementById('em-start').value=startTime||'';document.getElementById('em-end').value='';
+  document.getElementById('em-start').value=startTime||'';document.getElementById('em-end').value='';document.getElementById('em-end-date').value='';
   document.getElementById('em-type').value='business';document.getElementById('em-note').value='';
   document.getElementById('em-del-btn').classList.add('hidden');
   document.getElementById('em-add-task').checked=false;
@@ -1770,7 +1779,7 @@ function openEditEvent(id){
   const e=state.events.find(e=>e.id===id);if(!e)return;
   editingEventId=id;document.getElementById('em-title').textContent='✏️ עריכת אירוע';
   document.getElementById('em-name').value=e.name;document.getElementById('em-date').value=e.date;
-  document.getElementById('em-start').value=e.timeStart||'';document.getElementById('em-end').value=e.timeEnd||'';
+  document.getElementById('em-start').value=e.timeStart||'';document.getElementById('em-end').value=e.timeEnd||'';document.getElementById('em-end-date').value=e.dateEnd||'';
   document.getElementById('em-type').value=e.type;document.getElementById('em-note').value=e.note||'';
   document.getElementById('em-del-btn').classList.remove('hidden');
   document.getElementById('event-modal').classList.remove('hidden');
@@ -1789,7 +1798,8 @@ function saveEventModal(){
     if(stepSel&&stepSel.value){linkedStepId=parseInt(stepSel.value);const p=state.projects.find(p=>p.id===linkedProjId);if(p){const s=p.steps.find(s=>s.id===linkedStepId);if(s&&!name)name=s.text;}}
   }
   const date=document.getElementById('em-date').value;if(!name||!date){toast('שם ותאריך חובה');return;}
-  const data={name,date,timeStart:document.getElementById('em-start').value,timeEnd:document.getElementById('em-end').value,type:document.getElementById('em-type').value,note:document.getElementById('em-note').value.trim(),linkedTaskId:linkedTaskId||undefined,linkedProjId:linkedProjId||undefined,linkedStepId:linkedStepId||undefined};
+  const emEndDate=document.getElementById('em-end-date').value;
+  const data={name,date,dateEnd:emEndDate||undefined,timeStart:document.getElementById('em-start').value,timeEnd:document.getElementById('em-end').value,type:document.getElementById('em-type').value,note:document.getElementById('em-note').value.trim(),linkedTaskId:linkedTaskId||undefined,linkedProjId:linkedProjId||undefined,linkedStepId:linkedStepId||undefined};
   if(editingEventId){const e=state.events.find(e=>e.id===editingEventId);if(e)Object.assign(e,data);}
   else{
     state.events.unshift({id:Date.now(),...data,archived:false,completed:false});
